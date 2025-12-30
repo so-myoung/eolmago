@@ -44,5 +44,3 @@ src/main/resources/application-*.yml
 
 # QueryDSL이 생성하는 Q클래스 경로
 src/main/generated/
-
-#브랜치 경로 확인용 수정사항
