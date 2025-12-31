@@ -1,3 +1,28 @@
+## 기술 스택
+### Frontend
+
+- Thymeleaf
+- Tailwind CSS
+
+### Backend
+
+- Spring Boot
+- Spring Data JPA
+- Spring Security
+- PostgreSQL
+- Redis
+- Elastic Search
+- Swagger UI
+
+### Infra
+
+- Docker
+- AWS
+- Amazon S3
+- GitHub Actions (CI/CD)
+
+<br>
+
 ## 팀 협업 방식
 
 ### 커밋 컨벤션
