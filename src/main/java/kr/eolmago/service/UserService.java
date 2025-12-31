@@ -2,7 +2,6 @@ package kr.eolmago.service;
 
 import kr.eolmago.domain.entity.user.User;
 import kr.eolmago.domain.entity.user.enums.UserRole;
-import kr.eolmago.domain.entity.user.enums.UserStatus;
 import kr.eolmago.repository.SocialLoginRepository;
 import kr.eolmago.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,19 +26,53 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. : " + userId));
     }
 
-    public void updateUserStatus(UUID userId, UserStatus status) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+    public void updateUserRole(UUID adminId, UUID targetUserId, UserRole newRole) {
+        User admin = getUserById(adminId);
+        User targetUser = getUserById(targetUserId);
 
-        log.info("사용자 상태 변경: userId={}, status={}", userId, status);
+        targetUser.changeRole(admin, newRole);
+        userRepository.save(targetUser);
+
+        log.info("사용자 역할 변경: adminId={}, targetUserId={}, role={}",
+                adminId, targetUserId, newRole);
     }
 
-    public void updateUserRole(UUID userId, UserRole role) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+    public void suspendUser(UUID adminId, UUID targetUserId) {
+        User admin = getUserById(adminId);
+        User targetUser = getUserById(targetUserId);
 
-        log.info("사용자 역할 변경: userId={}, role={}", userId, role);
+        targetUser.suspend(admin);
+        userRepository.save(targetUser);
+
+        log.info("사용자 계정 정지: adminId={}, targetUserId={}", adminId, targetUserId);
     }
 
+    public void banUser(UUID adminId, UUID targetUserId) {
+        User admin = getUserById(adminId);
+        User targetUser = getUserById(targetUserId);
 
+        targetUser.ban(admin);
+        userRepository.save(targetUser);
+
+        log.info("사용자 계정 차단: adminId={}, targetUserId={}", adminId, targetUserId);
+    }
+
+    public void activateUser(UUID adminId, UUID targetUserId) {
+        User admin = getUserById(adminId);
+        User targetUser = getUserById(targetUserId);
+
+        targetUser.activate(admin);
+        userRepository.save(targetUser);
+
+        log.info("사용자 계정 활성화: adminId={}, targetUserId={}", adminId, targetUserId);
+    }
+
+    public void autoActivateUser(UUID userId) {
+        User user = getUserById(userId);
+
+        user.autoActivate();
+        userRepository.save(user);
+
+        log.info("사용자 자동 활성화: userId={}", userId);
+    }
 }
