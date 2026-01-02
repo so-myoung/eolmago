@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Deal 생성</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button-cancel {
+            background-color: #6c757d;
+        }
+        .button-cancel:hover {
+            background-color: #545b62;
+        }
+        .error {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            color: #721c24;
+        }
+        .info {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>➕ 새 거래 생성</h1>
+
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+    
+    <!-- 데이터 없을 때 안내 -->
+    <div th:if="${#lists.isEmpty(auctions)}" class="info">
+        ⚠️ 등록된 경매가 없습니다. 먼저 경매를 생성해주세요.
+    </div>
+    
+    <div th:if="${#lists.isEmpty(users)}" class="info">
+        ⚠️ 등록된 사용자가 없습니다. 먼저 사용자를 생성해주세요.
+    </div>
+
+    <form method="post" action="/test/deal/create" 
+          th:if="${!#lists.isEmpty(auctions) && !#lists.isEmpty(users)}">
+        <div class="form-group">
+            <label for="auctionId">경매 선택 *</label>
+            <select id="auctionId" name="auctionId" required>
+                <option value="">-- 경매를 선택하세요 --</option>
+                <option th:each="auction : ${auctions}" 
+                        th:value="${auction.auctionId}" 
+                        th:text="${auction.title} + ' (ID: ' + ${auction.auctionId} + ')'">
+                    경매 제목
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="sellerId">판매자 선택 *</label>
+            <select id="sellerId" name="sellerId" required>
+                <option value="">-- 판매자를 선택하세요 --</option>
+                <option th:each="user : ${users}" 
+                        th:value="${user.userId}" 
+                        th:text="'User ' + ${user.userId} + ' (' + ${user.role} + ')'">
+                    사용자
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="buyerId">구매자 선택 *</label>
+            <select id="buyerId" name="buyerId" required>
+                <option value="">-- 구매자를 선택하세요 --</option>
+                <option th:each="user : ${users}" 
+                        th:value="${user.userId}" 
+                        th:text="'User ' + ${user.userId} + ' (' + ${user.role} + ')'">
+                    사용자
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="finalPrice">최종 낙찰가 (원) *</label>
+            <input type="number" id="finalPrice" name="finalPrice" 
+                   min="0" step="1000" required placeholder="예: 50000">
+        </div>
+
+        <div>
+            <button type="submit" class="button">✅ 생성</button>
+            <a href="/test/deal" class="button button-cancel">❌ 취소</a>
+        </div>
+    </form>
+
+    <hr style="margin-top: 40px;">
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Deal 상세</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-PENDING_CONFIRMATION {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .status-CONFIRMED {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-COMPLETED {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .status-TERMINATED {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-EXPIRED {
+            background-color: #6c757d;
+            color: white;
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 거래 상세 정보</h1>
+
+    <div class="card">
+        <h2>기본 정보</h2>
+        <div class="info-grid">
+            <div class="label">거래 ID:</div>
+            <div class="value" th:text="${deal.dealId}">1</div>
+
+            <div class="label">상태:</div>
+            <div class="value">
+                <span th:class="'status status-' + ${deal.status}" 
+                      th:text="${deal.status}">PENDING</span>
+            </div>
+
+            <div class="label">최종 낙찰가:</div>
+            <div class="value">
+                <strong th:text="${#numbers.formatInteger(deal.finalPrice, 3, 'COMMA')} + '원'">50,000원</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>경매 정보</h2>
+        <div class="info-grid">
+            <div class="label">경매 ID:</div>
+            <div class="value" th:text="${deal.auctionId}">UUID</div>
+
+            <div class="label">경매 제목:</div>
+            <div class="value" th:text="${deal.auctionTitle}">경매 제목</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>참여자 정보</h2>
+        <div class="info-grid">
+            <div class="label">판매자 ID:</div>
+            <div class="value" th:text="${deal.sellerId}">UUID</div>
+
+            <div class="label">구매자 ID:</div>
+            <div class="value" th:text="${deal.buyerId}">UUID</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>일정 정보</h2>
+        <div class="info-grid">
+            <div class="label">확정 기한:</div>
+            <div class="value" th:text="${#temporals.format(deal.confirmByAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">판매자 확인:</div>
+            <div class="value" th:text="${deal.sellerConfirmedAt != null ? #temporals.format(deal.sellerConfirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미확인'}">미확인</div>
+
+            <div class="label">구매자 확인:</div>
+            <div class="value" th:text="${deal.buyerConfirmedAt != null ? #temporals.format(deal.buyerConfirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미확인'}">미확인</div>
+
+            <div class="label">확정 완료:</div>
+            <div class="value" th:text="${deal.confirmedAt != null ? #temporals.format(deal.confirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미완료'}">미완료</div>
+
+            <div class="label">거래 완료:</div>
+            <div class="value" th:text="${deal.completedAt != null ? #temporals.format(deal.completedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미완료'}">미완료</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${deal.terminatedAt != null}">
+        <h2>종료 정보</h2>
+        <div class="info-grid">
+            <div class="label">종료 시각:</div>
+            <div class="value" th:text="${#temporals.format(deal.terminatedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">종료 사유:</div>
+            <div class="value" th:text="${deal.terminationReason}">사유</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${deal.shippedAt != null}">
+        <h2>배송 정보</h2>
+        <div class="info-grid">
+            <div class="label">배송 시작:</div>
+            <div class="value" th:text="${#temporals.format(deal.shippedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">송장 번호:</div>
+            <div class="value" th:text="${deal.shippingNumber}">123456789</div>
+
+            <div class="label">택배사:</div>
+            <div class="value" th:text="${deal.shippingCarrierCode}">CJ대한통운</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>시스템 정보</h2>
+        <div class="info-grid">
+            <div class="label">생성일:</div>
+            <div class="value" th:text="${#temporals.format(deal.createdAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">수정일:</div>
+            <div class="value" th:text="${#temporals.format(deal.updatedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="/test/deal" class="button">← 목록으로</a>
+    </div>
+</body>
+</html>
