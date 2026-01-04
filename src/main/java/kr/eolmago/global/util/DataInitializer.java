@@ -14,9 +14,10 @@ import kr.eolmago.repository.search.SearchKeywordRepository;
 import kr.eolmago.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,9 @@ public class DataInitializer implements ApplicationRunner {
     private final AuctionItemRepository auctionItemRepository;
     private final AuctionRepository auctionRepository;
     private final SearchKeywordRepository searchKeywordRepository;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String AUTOCOMPLETE_KEY = "autocomplete:all";
 
     @Override
     @Transactional
@@ -55,9 +59,9 @@ public class DataInitializer implements ApplicationRunner {
         List<Auction> auctions = createAuctions(users);
         log.info("경매 {} 개 생성 완료", auctions.size());
 
-        // 3. 검색 키워드 생성
+        // 3. 검색 키워드 생성 (DB + Redis)
         List<SearchKeyword> keywords = createSearchKeywords();
-        log.info("검색 키워드 {} 개 생성 완료", keywords.size());
+        log.info("검색 키워드 {} 개 생성 완료 (DB + Redis)", keywords.size());
 
         log.info("========== 더미 데이터 생성 완료 ==========");
     }
@@ -242,7 +246,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * 검색 키워드 더미 데이터 생성 (✅ 새로 추가)
+     * 검색 키워드 더미 데이터 생성 (중복 체크 포함)
      *
      * 역할:
      * - 자동완성 테스트용 초기 데이터 생성
@@ -256,48 +260,18 @@ public class DataInitializer implements ApplicationRunner {
      */
     private List<SearchKeyword> createSearchKeywords() {
         List<SearchKeyword> keywords = new ArrayList<>();
+        ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
 
         // 검색어와 검색량 데이터
-        Map<String, Integer> keywordData = getStringIntegerMap();
-
-        // SearchKeyword 생성
-        for (Map.Entry<String, Integer> entry : keywordData.entrySet()) {
-            String keyword = entry.getKey();
-            Integer searchCount = entry.getValue();
-
-            // SearchKeyword.create()는 searchCount=1로 생성하므로
-            // 직접 생성 후 카운트 설정
-            SearchKeyword searchKeyword = SearchKeyword.create(keyword);
-
-            // searchCount를 원하는 값으로 설정 (리플렉션 대신 직접 생성)
-            // 실제로는 incrementSearchCount()를 여러 번 호출해야 하지만
-            // 더미 데이터이므로 직접 필드 접근 (Lombok @Setter 필요)
-            // 또는 SearchKeyword에 테스트용 생성자 추가
-
-            // 임시 해결: 반복 호출
-            for (int i = 1; i < searchCount; i++) {
-                searchKeyword.incrementSearchCount();
-            }
-
-            keywords.add(searchKeywordRepository.save(searchKeyword));
-
-            log.debug("검색 키워드 생성: keyword={}, count={}, type={}",
-                    keyword, searchKeyword.getSearchCount(), searchKeyword.getKeywordType());
-        }
-
-        return keywords;
-    }
-
-    private static @NonNull Map<String, Integer> getStringIntegerMap() {
         Map<String, Integer> keywordData = new HashMap<>();
 
-        // 브랜드 검색어 (가중치 적용됨)
+        // 브랜드 검색어
         keywordData.put("아이폰", 1247);
         keywordData.put("갤럭시", 1134);
         keywordData.put("애플", 892);
         keywordData.put("삼성", 567);
 
-        // 모델명 검색어 (숫자 포함)
+        // 모델명 검색어
         keywordData.put("아이폰 15", 856);
         keywordData.put("아이폰 14 프로", 523);
         keywordData.put("아이폰 13", 421);
@@ -310,6 +284,49 @@ public class DataInitializer implements ApplicationRunner {
         keywordData.put("새제품", 234);
         keywordData.put("아이패드", 456);
         keywordData.put("갤럭시탭", 289);
-        return keywordData;
+
+        for (Map.Entry<String, Integer> entry : keywordData.entrySet()) {
+            String keyword = entry.getKey();
+            Integer searchCount = entry.getValue();
+
+            // 중복 체크
+            if (searchKeywordRepository.findByKeyword(keyword).isPresent()) {
+                log.debug("검색 키워드 이미 존재, 스킵: keyword={}", keyword);
+                continue;  // 이미 있으면 건너뛰기
+            }
+
+            // 1. DB 저장
+            SearchKeyword searchKeyword = SearchKeyword.create(keyword);
+
+            // searchCount 설정
+            for (int i = 1; i < searchCount; i++) {
+                searchKeyword.incrementSearchCount();
+            }
+
+            keywords.add(searchKeywordRepository.save(searchKeyword));
+
+            // 2. Redis 저장
+            // 점수 계산: searchCount + 브랜드 가중치
+            int brandWeight = isBrandKeyword(keyword) ? 100 : 0;
+            double score = searchCount + brandWeight;
+
+            zSetOps.add(AUTOCOMPLETE_KEY, keyword, score);
+
+            log.debug("검색 키워드 생성: keyword={}, count={}, type={}, redis_score={}",
+                    keyword, searchKeyword.getSearchCount(), searchKeyword.getKeywordType(), score);
+        }
+
+        log.info("Redis 자동완성 데이터 {} 개 저장 완료", keywords.size());
+
+        return keywords;
     }
+
+    /**
+     * 브랜드 키워드 판단 (SearchKeywordService와 동일)
+     */
+    private boolean isBrandKeyword(String keyword) {
+        String lowerKeyword = keyword.toLowerCase();
+        return lowerKeyword.matches(".*(아이폰|갤럭시|픽셀|샤오미|애플|삼성|apple|samsung|google|xiaomi).*");
+    }
+
 }
