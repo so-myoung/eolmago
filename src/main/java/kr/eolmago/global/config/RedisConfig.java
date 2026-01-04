@@ -1,0 +1,74 @@
+package kr.eolmago.global.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+/**
+ * Redis 설정
+ *
+ * 역할:
+ * - Redis 연결 설정
+ * - RedisTemplate 빈 생성
+ *
+ *  * 참고:
+ *  * - 팀원 누구나 RedisTemplate 주입받아서 사용 가능
+ */
+@Configuration
+public class RedisConfig {
+
+    @Value("${spring.data.redis.host}")
+    private String host;
+
+    @Value("${spring.data.redis.port}")
+    private int port;
+
+    /**
+     * Redis 연결 팩토리
+     *  - Redis 서버와의 연결 관리
+     *  - 모든 RedisTemplate이 이 연결 사용
+     *
+     * @return RedisConnectionFactory
+     */
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(host);
+        config.setPort(port);
+        // 로컬은 비밀번호 없음
+        // 배포 환경: application-prod.yml에서 설정
+
+        return new LettuceConnectionFactory(config);
+    }
+
+    /**
+     * RedisTemplate<String,String> 빈 생성
+     *  - Key-Value 모두 문자열인 경우 사용
+     *
+     * @return RedisTemplate<String, String>
+     */
+    @Bean
+    public RedisTemplate<String, String> redisTemplate(
+            RedisConnectionFactory connectionFactory
+    ) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // String Serializer 사용 (String → byte[])
+        StringRedisSerializer serializer = new StringRedisSerializer();
+
+        // Key, Value 모두 String으로 직렬화
+        template.setKeySerializer(serializer);
+        template.setValueSerializer(serializer);
+        template.setHashKeySerializer(serializer);
+        template.setHashValueSerializer(serializer);
+
+        template.afterPropertiesSet();
+        return template;
+    }
+}
