@@ -41,6 +41,9 @@
         .button:hover {
             background-color: #0056b3;
         }
+        .button.active {
+            background-color: #28a745;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -95,15 +98,22 @@
     <!-- 액션 버튼 -->
     <div>
         <a href="/test/deal/create" class="button">➕ 새 거래 생성</a>
-        <a href="/test/deal" class="button">🔄 새로고침</a>
+        <a href="/test/deal" class="button" th:classappend="${filterStatus == null} ? 'active' : ''">🔄 전체 목록</a>
         <a href="/test/review" class="button">📝 Review 테스트로 이동</a>
     </div>
 
     <!-- Deal 목록 -->
-    <h2>전체 거래 목록 (<span th:text="${deals.size()}">0</span>건)</h2>
+    <h2 th:if="${filterStatus == null}">전체 거래 목록 (<span th:text="${deals.size()}">0</span>건)</h2>
+    <h2 th:if="${filterStatus != null}">
+        <span th:text="${filterStatus}">COMPLETED</span> 상태 거래 목록 
+        (<span th:text="${deals.size()}">0</span>건)
+    </h2>
     
     <div th:if="${deals.isEmpty()}">
-        <p>등록된 거래가 없습니다.</p>
+        <p th:if="${filterStatus == null}">등록된 거래가 없습니다.</p>
+        <p th:if="${filterStatus != null}">
+            <strong th:text="${filterStatus}"></strong> 상태의 거래가 없습니다.
+        </p>
     </div>
 
     <table th:if="${!deals.isEmpty()}">
@@ -145,11 +155,31 @@
     <!-- 상태별 필터 -->
     <h3>상태별 조회</h3>
     <div>
-        <a href="/test/deal/status/PENDING_CONFIRMATION" class="button">확정 대기</a>
-        <a href="/test/deal/status/CONFIRMED" class="button">확정됨</a>
-        <a href="/test/deal/status/COMPLETED" class="button">완료</a>
-        <a href="/test/deal/status/TERMINATED" class="button">종료</a>
-        <a href="/test/deal/status/EXPIRED" class="button">만료</a>
+        <a href="/test/deal/status/PENDING_CONFIRMATION" 
+           class="button"
+           th:classappend="${filterStatus == 'PENDING_CONFIRMATION'} ? 'active' : ''">
+            확정 대기
+        </a>
+        <a href="/test/deal/status/CONFIRMED" 
+           class="button"
+           th:classappend="${filterStatus == 'CONFIRMED'} ? 'active' : ''">
+            확정됨
+        </a>
+        <a href="/test/deal/status/COMPLETED" 
+           class="button"
+           th:classappend="${filterStatus == 'COMPLETED'} ? 'active' : ''">
+            완료
+        </a>
+        <a href="/test/deal/status/TERMINATED" 
+           class="button"
+           th:classappend="${filterStatus == 'TERMINATED'} ? 'active' : ''">
+            종료
+        </a>
+        <a href="/test/deal/status/EXPIRED" 
+           class="button"
+           th:classappend="${filterStatus == 'EXPIRED'} ? 'active' : ''">
+            만료
+        </a>
     </div>
 </body>
 </html>
