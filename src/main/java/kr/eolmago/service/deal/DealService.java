@@ -91,20 +91,14 @@ public class DealService {
      * 판매자 확인
      */
     @Transactional
-    public DealResponse confirmBySeller(Long dealId, UUID userId) {
+    public DealResponse confirmBySeller(Long dealId) {
         Deal deal = findDealById(dealId);
 
-        // 비즈니스 검증
-        if (!deal.isSeller(userId)) {
-            throw new IllegalArgumentException("판매자만 확인할 수 있습니다");
-        }
         if (deal.getSellerConfirmedAt() != null) {
             throw new IllegalStateException("이미 확인했습니다");
         }
 
-        // UPDATE 메서드 사용
         deal.confirmBySeller();
-
         return DealResponse.from(deal);
     }
 
@@ -112,20 +106,14 @@ public class DealService {
      * 구매자 확인
      */
     @Transactional
-    public DealResponse confirmByBuyer(Long dealId, UUID userId) {
+    public DealResponse confirmByBuyer(Long dealId) {
         Deal deal = findDealById(dealId);
 
-        // 비즈니스 검증
-        if (!deal.isBuyer(userId)) {
-            throw new IllegalArgumentException("구매자만 확인할 수 있습니다");
-        }
         if (deal.getBuyerConfirmedAt() != null) {
             throw new IllegalStateException("이미 확인했습니다");
         }
 
-        // UPDATE 메서드 사용
         deal.confirmByBuyer();
-
         return DealResponse.from(deal);
     }
 
@@ -133,20 +121,14 @@ public class DealService {
      * 거래 완료
      */
     @Transactional
-    public DealResponse completeDeal(Long dealId, UUID userId) {
+    public DealResponse completeDeal(Long dealId) {
         Deal deal = findDealById(dealId);
 
-        // 비즈니스 검증
-        if (!deal.isParticipant(userId)) {
-            throw new IllegalArgumentException("거래 당사자만 완료할 수 있습니다");
-        }
         if (!deal.canComplete()) {
             throw new IllegalStateException("완료할 수 없는 상태입니다");
         }
 
-        // UPDATE 메서드 사용
         deal.complete();
-
         return DealResponse.from(deal);
     }
 
@@ -154,54 +136,25 @@ public class DealService {
      * 거래 종료 (취소)
      */
     @Transactional
-    public DealResponse terminateDeal(Long dealId, UUID userId, String reason) {
+    public DealResponse terminateDeal(Long dealId, String reason) {
         Deal deal = findDealById(dealId);
 
-        // 비즈니스 검증
-        if (!deal.isParticipant(userId)) {
-            throw new IllegalArgumentException("거래 당사자만 종료할 수 있습니다");
-        }
         if (!deal.canTerminate()) {
             throw new IllegalStateException("종료할 수 없는 상태입니다");
         }
 
-        // UPDATE 메서드 사용
         deal.terminate(reason);
-
         return DealResponse.from(deal);
     }
 
     /**
-     * 배송 시작
+     * 거래 만료
      */
     @Transactional
-    public DealResponse startShipping(Long dealId, UUID userId, String shippingNumber, String carrierCode) {
+    public DealResponse expireDeal(Long dealId) {
         Deal deal = findDealById(dealId);
-
-        // 비즈니스 검증
-        if (!deal.isSeller(userId)) {
-            throw new IllegalArgumentException("판매자만 배송을 시작할 수 있습니다");
-        }
-
-        // UPDATE 메서드 사용
-        deal.startShipping(shippingNumber, carrierCode);
-
+        deal.expire();
         return DealResponse.from(deal);
-    }
-
-    /**
-     * 만료된 거래 처리 (스케줄러)
-     */
-    @Transactional
-    public void expireDeals() {
-        List<Deal> expiredDeals = dealRepository.findByStatusAndConfirmByAtBefore(
-            DealStatus.PENDING_CONFIRMATION,
-            OffsetDateTime.now()
-        );
-        
-        for (Deal deal : expiredDeals) {
-            deal.expire();
-        }
     }
 
     // ========================================
