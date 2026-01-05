@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Deal 상세</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-PENDING_CONFIRMATION {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .status-CONFIRMED {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-COMPLETED {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .status-TERMINATED {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-EXPIRED {
+            background-color: #6c757d;
+            color: white;
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 거래 상세 정보</h1>
+
+    <div class="card">
+        <h2>기본 정보</h2>
+        <div class="info-grid">
+            <div class="label">거래 ID:</div>
+            <div class="value" th:text="${deal.dealId}">1</div>
+
+            <div class="label">상태:</div>
+            <div class="value">
+                <span th:class="'status status-' + ${deal.status}" 
+                      th:text="${deal.status}">PENDING</span>
+            </div>
+
+            <div class="label">최종 낙찰가:</div>
+            <div class="value">
+                <strong th:text="${#numbers.formatInteger(deal.finalPrice, 3, 'COMMA')} + '원'">50,000원</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>경매 정보</h2>
+        <div class="info-grid">
+            <div class="label">경매 ID:</div>
+            <div class="value" th:text="${deal.auctionId}">UUID</div>
+
+            <div class="label">경매 제목:</div>
+            <div class="value" th:text="${deal.auctionTitle}">경매 제목</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>참여자 정보</h2>
+        <div class="info-grid">
+            <div class="label">판매자 ID:</div>
+            <div class="value" th:text="${deal.sellerId}">UUID</div>
+
+            <div class="label">구매자 ID:</div>
+            <div class="value" th:text="${deal.buyerId}">UUID</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>일정 정보</h2>
+        <div class="info-grid">
+            <div class="label">확정 기한:</div>
+            <div class="value" th:text="${#temporals.format(deal.confirmByAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">판매자 확인:</div>
+            <div class="value" th:text="${deal.sellerConfirmedAt != null ? #temporals.format(deal.sellerConfirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미확인'}">미확인</div>
+
+            <div class="label">구매자 확인:</div>
+            <div class="value" th:text="${deal.buyerConfirmedAt != null ? #temporals.format(deal.buyerConfirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미확인'}">미확인</div>
+
+            <div class="label">확정 완료:</div>
+            <div class="value" th:text="${deal.confirmedAt != null ? #temporals.format(deal.confirmedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미완료'}">미완료</div>
+
+            <div class="label">거래 완료:</div>
+            <div class="value" th:text="${deal.completedAt != null ? #temporals.format(deal.completedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss') : '미완료'}">미완료</div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${deal.terminatedAt != null}">
+        <h2>종료 정보</h2>
+        <div class="info-grid">
+            <div class="label">종료 시각:</div>
+            <div class="value" th:text="${#temporals.format(deal.terminatedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">종료 사유:</div>
+            <div class="value" th:text="${deal.terminationReason}">사유</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>시스템 정보</h2>
+        <div class="info-grid">
+            <div class="label">생성일:</div>
+            <div class="value" th:text="${#temporals.format(deal.createdAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+
+            <div class="label">수정일:</div>
+            <div class="value" th:text="${#temporals.format(deal.updatedAt.plusHours(9), 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</div>
+        </div>
+    </div>
+
+    <!-- 상태 전환 버튼들 -->
+    <div class="info-box" style="margin-top: 30px;">
+        <h2>⚙️ 상태 관리</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            현재 상태에서 가능한 작업을 선택하세요
+        </p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <!-- 판매자 확인 -->
+            <form th:if="${deal.sellerConfirmedAt == null}" 
+                  th:action="@{/test/deal/{id}/confirm-seller(id=${deal.dealId})}" 
+                  method="post" style="display: inline;">
+                <button type="submit" class="button" style="background: #4CAF50;">
+                    ✅ 판매자 확인
+                </button>
+            </form>
+
+            <!-- 구매자 확인 -->
+            <form th:if="${deal.buyerConfirmedAt == null}" 
+                  th:action="@{/test/deal/{id}/confirm-buyer(id=${deal.dealId})}" 
+                  method="post" style="display: inline;">
+                <button type="submit" class="button" style="background: #2196F3;">
+                    ✅ 구매자 확인
+                </button>
+            </form>
+
+            <!-- 거래 완료 -->
+            <form th:if="${deal.status == 'CONFIRMED'}" 
+                  th:action="@{/test/deal/{id}/complete(id=${deal.dealId})}" 
+                  method="post" 
+                  style="display: inline;"
+                  onsubmit="return confirm('거래를 완료하시겠습니까?')">
+                <button type="submit" class="button" style="background: #9C27B0;">
+                    ✨ 거래 완료
+                </button>
+            </form>
+
+            <!-- 거래 취소 -->
+            <form th:if="${deal.status != 'COMPLETED'}" 
+                  th:action="@{/test/deal/{id}/terminate(id=${deal.dealId})}" 
+                  method="post" 
+                  style="display: inline;"
+                  onsubmit="return confirmCancel()">
+                <input type="hidden" name="reason" id="cancelReason" value="사용자 요청">
+                <button type="submit" class="button" style="background: #F44336;">
+                    ❌ 거래 취소
+                </button>
+            </form>
+
+            <!-- 거래 만료 -->
+            <form th:action="@{/test/deal/{id}/expire(id=${deal.dealId})}" 
+                  method="post" 
+                  style="display: inline;"
+                  onsubmit="return confirm('거래를 만료 처리하시겠습니까?')">
+                <button type="submit" class="button" style="background: #607D8B;">
+                    ⏰ 거래 만료
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PDF 다운로드 (COMPLETED 상태일 때만) -->
+    <div class="info-box" th:if="${deal.status == 'COMPLETED'}" style="margin-top: 30px; background: #E8F5E9;">
+        <h2>📄 거래확정서</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            완료된 거래의 거래확정서를 PDF로 다운로드할 수 있습니다
+        </p>
+        <a th:href="@{/test/deal/{id}/pdf(id=${deal.dealId})}" 
+           class="button" 
+           style="background: #4CAF50; text-decoration: none; display: inline-block;">
+            📥 거래확정서 PDF 다운로드
+        </a>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="/test/deal" class="button">← 목록으로</a>
+    </div>
+
+    <script>
+        function confirmCancel() {
+            const reason = prompt('취소 사유를 입력하세요:', '사용자 요청');
+            if (reason === null) return false;
+            
+            document.getElementById('cancelReason').value = reason;
+            return confirm('거래를 취소하시겠습니까?');
+        }
+    </script>
+</body>
+</html>
