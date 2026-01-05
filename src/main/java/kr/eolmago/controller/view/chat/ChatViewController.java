@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,12 +24,8 @@ public class ChatViewController {
 
 	@GetMapping("/rooms/{roomId}")
 	public String chatRoom(@PathVariable Long roomId,
-		@org.springframework.security.core.annotation.AuthenticationPrincipal CustomUserDetails me,
+		@AuthenticationPrincipal CustomUserDetails me,
 		Model model) {
-
-		if (me == null || me.getId() == null || me.getId().isBlank()) {
-			return "redirect:/login";
-		}
 
 		UUID userId = UUID.fromString(me.getId());
 
@@ -37,6 +34,8 @@ public class ChatViewController {
 
 		model.addAttribute("roomId", roomId);
 		model.addAttribute("userId", userId.toString());
+		model.addAttribute("auctionTitle", room.getAuction().getTitle());
+
 		return "pages/chat/chat-room";
 	}
 }
