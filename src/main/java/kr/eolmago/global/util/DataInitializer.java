@@ -155,6 +155,8 @@ public class DataInitializer /*implements ApplicationRunner*/ {
                 endAt = null;
             }
 
+            int bidIncrement = 5000;               // 원하는 값(최소단위)
+
             Auction auction = Auction.create(
                     item,
                     seller,
@@ -165,11 +167,12 @@ public class DataInitializer /*implements ApplicationRunner*/ {
                             specs.get("storageGb")),
                     status,
                     basePrice,
-                    durationHours,
                     bidIncrement,
+                    durationHours,
                     startAt,
                     endAt
             );
+
 
             auctions.add(auctionRepository.save(auction));
         }
@@ -222,6 +225,8 @@ public class DataInitializer /*implements ApplicationRunner*/ {
                 startAt = null;
                 endAt = null;
             }
+
+            int bidIncrement = 10000;
 
             Auction auction = Auction.create(
                     item,
