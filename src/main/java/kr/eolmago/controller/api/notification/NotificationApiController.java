@@ -4,13 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import kr.eolmago.domain.entity.notification.Notification;
 import kr.eolmago.dto.api.notification.response.NotificationResponse;
 import kr.eolmago.global.security.CustomUserDetails;
 import kr.eolmago.repository.notification.NotificationRepository;
+import kr.eolmago.service.notification.NotificationCommandService;
 import kr.eolmago.service.notification.NotificationSseRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,23 +35,22 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationApiController {
 
 	private final NotificationRepository notificationRepository;
+	private final NotificationCommandService notificationCommandService;
 	private final NotificationSseRegistry sseRegistry;
 
 	@Operation(
 		summary = "내 알림 목록 조회(페이징)",
 		description = """
-            로그인한 사용자의 알림을 최신순으로 조회함.
-            삭제(soft delete)된 알림은 제외함.
-            """
+                로그인한 사용자의 알림을 최신순으로 조회함.
+                삭제(soft delete)된 알림은 제외함.
+                """
 	)
 	@SecurityRequirement(name = "bearerAuth")
 	@GetMapping
 	public Page<NotificationResponse> list(
 		@AuthenticationPrincipal CustomUserDetails me,
-
 		@Parameter(description = "페이지(0부터 시작)", example = "0")
 		@RequestParam(defaultValue = "0") int page,
-
 		@Parameter(description = "페이지 크기", example = "20")
 		@RequestParam(defaultValue = "20") int size
 	) {
@@ -85,18 +83,11 @@ public class NotificationApiController {
 	@PatchMapping("/{notificationId}/read")
 	public void readOne(
 		@AuthenticationPrincipal CustomUserDetails me,
-
 		@Parameter(description = "알림 ID", example = "1", required = true)
 		@PathVariable Long notificationId
 	) {
 		UUID userId = currentUserId(me);
-
-		Notification notification = notificationRepository
-			.findByNotificationIdAndUser_UserIdAndDeletedFalse(notificationId, userId)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."));
-
-		notification.markRead(OffsetDateTime.now());
-		// dirty checking
+		notificationCommandService.readOne(userId, notificationId);
 	}
 
 	@Operation(
@@ -107,7 +98,7 @@ public class NotificationApiController {
 	@PatchMapping("/read-all")
 	public int readAll(@AuthenticationPrincipal CustomUserDetails me) {
 		UUID userId = currentUserId(me);
-		return notificationRepository.markAllRead(userId, OffsetDateTime.now());
+		return notificationCommandService.readAll(userId);
 	}
 
 	@Operation(
@@ -118,28 +109,21 @@ public class NotificationApiController {
 	@DeleteMapping("/{notificationId}")
 	public void delete(
 		@AuthenticationPrincipal CustomUserDetails me,
-
 		@Parameter(description = "알림 ID", example = "1", required = true)
 		@PathVariable Long notificationId
 	) {
 		UUID userId = currentUserId(me);
-
-		Notification notification = notificationRepository
-			.findByNotificationIdAndUser_UserIdAndDeletedFalse(notificationId, userId)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."));
-
-		notification.softDelete(OffsetDateTime.now());
-		// dirty checking
+		notificationCommandService.delete(userId, notificationId);
 	}
 
 	@Operation(
 		summary = "알림 SSE 스트림 연결",
 		description = """
-            로그인한 사용자에게 SSE 연결을 열어 실시간 알림을 푸시함.
-            이벤트 이름:
-            - INIT: 최초 연결 확인
-            - NOTIFICATION: 알림 payload 전송
-            """
+                로그인한 사용자에게 SSE 연결을 열어 실시간 알림을 푸시함.
+                이벤트 이름:
+                - INIT: 최초 연결 확인
+                - NOTIFICATION: 알림 payload 전송
+                """
 	)
 	@SecurityRequirement(name = "bearerAuth")
 	@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

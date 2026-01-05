@@ -14,17 +14,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-	/**
-	 * Dsl로 변경할 예정
-	 */
-
 	Page<Notification> findByUser_UserIdAndDeletedFalseOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
 	Optional<Notification> findByNotificationIdAndUser_UserIdAndDeletedFalse(Long notificationId, UUID userId);
 
 	long countByUser_UserIdAndReadFalseAndDeletedFalse(UUID userId);
 
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Modifying(clearAutomatically = true)
 	@Query("""
         update Notification n
            set n.read = true, n.readAt = :now
