@@ -1,0 +1,123 @@
+<script>
+    const root = document.getElementById('chatRoot');
+    const roomId = root.dataset.roomId;
+    const myUserId = root.dataset.userId;
+
+    const messagesEl = document.getElementById('messages');
+    const loadMoreBtn = document.getElementById('loadMore');
+
+    let cursor = null;
+    let loading = false;
+
+    function escapeHtml(str) {
+        return String(str ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function pickMsgId(m)    { return m.messageId ?? m.chatMessageId ?? m.id; }
+    function pickSender(m)   { return m.senderId ?? m.sender ?? m.userId; }
+    function pickContent(m)  { return m.content ?? m.message ?? ''; }
+    function pickAt(m)       { return m.createdAt ?? m.sentAt ?? m.at ?? null; } // 있으면 표시
+
+    function formatTime(v) {
+        if (!v) return '';
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function setLoadMoreEnabled(enabled, label) {
+        loadMoreBtn.disabled = !enabled;
+        loadMoreBtn.classList.toggle('opacity-50', !enabled);
+        loadMoreBtn.classList.toggle('cursor-not-allowed', !enabled);
+        if (label) loadMoreBtn.textContent = label;
+    }
+
+    function renderMessage(m) {
+        const mine = String(pickSender(m)) === String(myUserId);
+        const content = escapeHtml(pickContent(m));
+        const time = formatTime(pickAt(m));
+
+        return `
+      <div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[75%]">
+          <div class="${mine ? 'bg-slate-900 text-white' : 'bg-white text-gray-900 border border-gray-200'} rounded-2xl px-4 py-2 text-sm shadow-sm whitespace-pre-wrap break-words">
+            ${content}
+          </div>
+          ${time ? `<div class="mt-1 text-[11px] text-gray-400 ${mine ? 'text-right' : 'text-left'}">${time}</div>` : ``}
+        </div>
+      </div>
+    `;
+    }
+
+    async function loadMessages(nextCursor) {
+        if (loading) return;
+        loading = true;
+
+        setLoadMoreEnabled(false, '불러오는 중...');
+        if (!nextCursor) {
+            messagesEl.innerHTML = `<div class="text-sm text-gray-500">불러오는 중...</div>`;
+        }
+
+        try {
+            const url = new URL(`/api/chat/rooms/${roomId}/messages`, location.origin);
+            if (nextCursor) url.searchParams.set('cursor', nextCursor);
+
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) {
+                messagesEl.innerHTML = `<div class="text-sm text-red-600">메시지 조회 실패 (${res.status})</div>`;
+                setLoadMoreEnabled(false, '이전 메시지 더 보기');
+                return;
+            }
+
+            const list = await res.json(); // 서버: 최신순(desc) 30개
+            if (!Array.isArray(list) || list.length === 0) {
+                if (!nextCursor) {
+                    messagesEl.innerHTML = `<div class="text-sm text-gray-500">메시지가 아직 없어요.</div>`;
+                }
+                // 더 이상 이전 메시지 없음
+                setLoadMoreEnabled(false, '이전 메시지 없음');
+                return;
+            }
+
+            const asc = [...list].reverse(); // 화면: 오래된 → 최신
+            const html = asc.map(renderMessage).join('');
+
+            if (!nextCursor) {
+                messagesEl.innerHTML = html;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            } else {
+                const prevHeight = messagesEl.scrollHeight;
+                messagesEl.insertAdjacentHTML('afterbegin', html);
+                messagesEl.scrollTop = messagesEl.scrollHeight - prevHeight; // 위치 유지
+            }
+
+            cursor = pickMsgId(list[list.length - 1]); // desc에서 마지막 = 가장 오래된
+            setLoadMoreEnabled(Boolean(cursor), '이전 메시지 더 보기');
+        } catch (e) {
+            messagesEl.innerHTML = `
+        <div class="text-sm text-gray-700">
+          네트워크 오류가 발생했어요.
+          <button id="retryBtn" class="ml-2 underline font-semibold">재시도</button>
+        </div>
+      `;
+            const retry = document.getElementById('retryBtn');
+            if (retry) retry.addEventListener('click', () => loadMessages(nextCursor));
+            setLoadMoreEnabled(Boolean(cursor), '이전 메시지 더 보기');
+        } finally {
+            loading = false;
+        }
+    }
+
+    loadMoreBtn.addEventListener('click', () => {
+        if (!cursor) return;
+        loadMessages(cursor);
+    });
+
+    setLoadMoreEnabled(false, '불러오는 중...');
+    loadMessages(null);
+</script>

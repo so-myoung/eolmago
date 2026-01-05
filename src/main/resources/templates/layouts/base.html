@@ -3,15 +3,14 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 
-<!-- head는 fragments/head.html로 공통화 -->
 <head th:replace="~{fragments/head :: head('얼마고')}"></head>
 
-<body class="bg-gradient-to-br from-gray-50 via-white to-gray-50 text-gray-900 min-h-screen">
+<body class="bg-gradient-to-br from-gray-50 via-white to-gray-50 text-gray-900 min-h-screen flex flex-col">
 <!-- Navigation -->
 <th:block th:replace="~{fragments/nav :: nav}" />
 
 <!-- Main content -->
-<main class="mx-auto max-w-7xl px-6 py-10">
+<main class="mx-auto max-w-7xl px-6 py-10 flex-1 w-full">
     <div layout:fragment="content">
         <!-- Page content goes here -->
     </div>
