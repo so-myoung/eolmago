@@ -41,7 +41,6 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/v3/api-docs/**",
                         "/api-docs/**",
-
                         "/api/**"
                 )
                 .csrf(AbstractHttpConfigurer::disable)
@@ -56,7 +55,6 @@ public class SecurityConfig {
     public SecurityFilterChain appChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
