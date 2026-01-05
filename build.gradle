@@ -56,6 +56,9 @@ dependencies {
     // JSON/JSONB 등 추가 타입 매핑 유틸
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.14.1'
 
+    // iText PDF 생성 라이브러리
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
