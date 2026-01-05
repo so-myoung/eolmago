@@ -83,26 +83,26 @@ public class DataInitializer implements ApplicationRunner {
 
         // 휴대폰 더미 데이터
         String[] phoneNames = {
-            "아이폰 15 Pro Max", "갤럭시 S24 Ultra", "아이폰 14 Pro", "갤럭시 Z Flip5",
-            "아이폰 13", "갤럭시 S23", "아이폰 15", "갤럭시 A54",
-            "아이폰 14", "갤럭시 S23 FE", "아이폰 SE 3세대", "갤럭시 Z Fold5"
+                "아이폰 15 Pro Max", "갤럭시 S24 Ultra", "아이폰 14 Pro", "갤럭시 Z Flip5",
+                "아이폰 13", "갤럭시 S23", "아이폰 15", "갤럭시 A54",
+                "아이폰 14", "갤럭시 S23 FE", "아이폰 SE 3세대", "갤럭시 Z Fold5"
         };
 
         String[] phoneBrands = {
-            "Apple", "Samsung", "Apple", "Samsung",
-            "Apple", "Samsung", "Apple", "Samsung",
-            "Apple", "Samsung", "Apple", "Samsung"
+                "Apple", "Samsung", "Apple", "Samsung",
+                "Apple", "Samsung", "Apple", "Samsung",
+                "Apple", "Samsung", "Apple", "Samsung"
         };
 
         // 태블릿 더미 데이터
         String[] tabletNames = {
-            "아이패드 Pro 12.9", "갤럭시 탭 S9 Ultra", "아이패드 Air 5세대", "갤럭시 탭 S9",
-            "아이패드 10세대", "갤럭시 탭 A9+", "아이패드 mini 6", "갤럭시 탭 S8"
+                "아이패드 Pro 12.9", "갤럭시 탭 S9 Ultra", "아이패드 Air 5세대", "갤럭시 탭 S9",
+                "아이패드 10세대", "갤럭시 탭 A9+", "아이패드 mini 6", "갤럭시 탭 S8"
         };
 
         String[] tabletBrands = {
-            "Apple", "Samsung", "Apple", "Samsung",
-            "Apple", "Samsung", "Apple", "Samsung"
+                "Apple", "Samsung", "Apple", "Samsung",
+                "Apple", "Samsung", "Apple", "Samsung"
         };
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -122,10 +122,10 @@ public class DataInitializer implements ApplicationRunner {
             specs.put("color", i % 2 == 0 ? "블랙" : "화이트");
 
             AuctionItem item = AuctionItem.create(
-                phoneNames[phoneIndex],
-                ItemCategory.PHONE,
-                ItemCondition.values()[i % 4], // S, A, B, C 순환
-                specs
+                    phoneNames[phoneIndex],
+                    ItemCategory.PHONE,
+                    ItemCondition.values()[i % 4], // S, A, B, C 순환
+                    specs
             );
             auctionItemRepository.save(item);
 
@@ -156,20 +156,24 @@ public class DataInitializer implements ApplicationRunner {
                 endAt = null;
             }
 
+            int bidIncrement = 5000;               // 원하는 값(최소단위)
+
             Auction auction = Auction.create(
-                item,
-                seller,
-                phoneNames[phoneIndex] + " - " + specs.get("storageGb") + "GB " + specs.get("color"),
-                String.format("%s %s 판매합니다. 상태: %s급, 용량: %dGB",
-                    specs.get("brand"), specs.get("model"),
-                    ItemCondition.values()[i % 4].name(),
-                    specs.get("storageGb")),
-                status,
-                basePrice,
-                durationHours,
-                startAt,
-                endAt
+                    item,
+                    seller,
+                    phoneNames[phoneIndex] + " - " + specs.get("storageGb") + "GB " + specs.get("color"),
+                    String.format("%s %s 판매합니다. 상태: %s급, 용량: %dGB",
+                            specs.get("brand"), specs.get("model"),
+                            ItemCondition.values()[i % 4].name(),
+                            specs.get("storageGb")),
+                    status,
+                    basePrice,
+                    bidIncrement,
+                    durationHours,
+                    startAt,
+                    endAt
             );
+
 
             auctions.add(auctionRepository.save(auction));
         }
@@ -189,10 +193,10 @@ public class DataInitializer implements ApplicationRunner {
             specs.put("cellular", i % 3 == 0 ? "Wi-Fi + Cellular" : "Wi-Fi");
 
             AuctionItem item = AuctionItem.create(
-                tabletNames[tabletIndex],
-                ItemCategory.TABLET,
-                ItemCondition.values()[i % 4],
-                specs
+                    tabletNames[tabletIndex],
+                    ItemCategory.TABLET,
+                    ItemCondition.values()[i % 4],
+                    specs
             );
             auctionItemRepository.save(item);
 
@@ -222,19 +226,22 @@ public class DataInitializer implements ApplicationRunner {
                 endAt = null;
             }
 
+            int bidIncrement = 10000;
+
             Auction auction = Auction.create(
-                item,
-                seller,
-                tabletNames[tabletIndex] + " - " + specs.get("storageGb") + "GB",
-                String.format("%s %s 판매합니다. 화면: %s, 상태: %s급",
-                    specs.get("brand"), specs.get("model"),
-                    specs.get("screenSize"),
-                    ItemCondition.values()[i % 4].name()),
-                status,
-                basePrice,
-                durationHours,
-                startAt,
-                endAt
+                    item,
+                    seller,
+                    tabletNames[tabletIndex] + " - " + specs.get("storageGb") + "GB",
+                    String.format("%s %s 판매합니다. 화면: %s, 상태: %s급",
+                            specs.get("brand"), specs.get("model"),
+                            specs.get("screenSize"),
+                            ItemCondition.values()[i % 4].name()),
+                    status,
+                    basePrice,
+                    bidIncrement,
+                    durationHours,
+                    startAt,
+                    endAt
             );
 
             auctions.add(auctionRepository.save(auction));
