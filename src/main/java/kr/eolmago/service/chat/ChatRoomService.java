@@ -11,6 +11,7 @@ import kr.eolmago.domain.entity.user.User;
 import kr.eolmago.dto.api.chat.response.ChatRoomSummaryResponse;
 import kr.eolmago.repository.auction.AuctionRepository;
 import kr.eolmago.repository.chat.ChatRoomRepository;
+import kr.eolmago.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,12 +23,20 @@ public class ChatRoomService {
 
 	private final ChatRoomRepository chatRoomRepository;
 	private final AuctionRepository auctionRepository;
+	private final UserRepository userRepository;
 
+	/**
+	 * 테스트/개발용: buyer가 없어도(=LIVE) 요청자를 buyer로 간주해 방 생성
+	 * - 단, seller는 buyer로 방 생성 못하게 막음(원하면 풀어도 됨)
+	 * - 기존 방이 있으면 참여자만 roomId 반환
+	 */
 	@Transactional
-	public Long createOrGetRoomForWinner(UUID auctionId) {
+	public Long createOrGetRoom(UUID auctionId, UUID requesterId) {
 		Optional<ChatRoom> existing = chatRoomRepository.findByAuctionAuctionId(auctionId);
 		if (existing.isPresent()) {
-			return existing.get().getChatRoomId();
+			ChatRoom room = existing.get();
+			validateParticipant(room, requesterId);
+			return room.getChatRoomId();
 		}
 
 		Auction auction = auctionRepository.findById(auctionId)
@@ -35,8 +44,19 @@ public class ChatRoomService {
 
 		User seller = auction.getSeller();
 		User buyer = auction.getBuyer();
+
 		if (buyer == null) {
-			throw new IllegalStateException("buyer not decided yet");
+			if (seller.getUserId().equals(requesterId)) {
+				throw new IllegalStateException("seller cannot create room as buyer");
+			}
+			buyer = userRepository.findById(requesterId)
+				.orElseThrow(() -> new IllegalArgumentException("user not found"));
+		} else {
+			boolean isSeller = seller.getUserId().equals(requesterId);
+			boolean isBuyer = buyer.getUserId().equals(requesterId);
+			if (!isSeller && !isBuyer) {
+				throw new IllegalStateException("no permission for this auction chat");
+			}
 		}
 
 		ChatRoom newRoom = ChatRoom.create(auction, seller, buyer);
@@ -45,8 +65,10 @@ public class ChatRoomService {
 			ChatRoom saved = chatRoomRepository.save(newRoom);
 			return saved.getChatRoomId();
 		} catch (DataIntegrityViolationException e) {
+			// 경합으로 누군가 먼저 만들었을 수 있음 → 다시 조회
 			ChatRoom room = chatRoomRepository.findByAuctionAuctionId(auctionId)
 				.orElseThrow(() -> e);
+			validateParticipant(room, requesterId);
 			return room.getChatRoomId();
 		}
 	}

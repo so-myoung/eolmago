@@ -87,13 +87,11 @@ public class ChatApiController {
 	@SecurityRequirement(name = "bearerAuth")
 	@PostMapping("/rooms")
 	public Long createRoom(
-		@Parameter(description = "경매 ID(UUID)", required = true)
 		@RequestParam UUID auctionId,
-
 		@AuthenticationPrincipal CustomUserDetails me
 	) {
-		currentUserId(me); // 인증 확인용
-		return chatRoomService.createOrGetRoomForWinner(auctionId);
+		UUID userId = currentUserId(me);
+		return chatRoomService.createOrGetRoom(auctionId, userId);
 	}
 
 	private UUID currentUserId(CustomUserDetails me) {
