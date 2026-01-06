@@ -10,6 +10,8 @@ import kr.eolmago.domain.entity.user.enums.SocialProvider;
 import kr.eolmago.domain.entity.user.enums.UserRole;
 import kr.eolmago.repository.user.SocialLoginRepository;
 import kr.eolmago.repository.user.UserRepository;
+import kr.eolmago.service.notification.publish.NotificationPublishCommand;
+import kr.eolmago.service.notification.publish.NotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,6 +31,8 @@ public class SocialLoginService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final SocialLoginRepository socialLoginRepository;
+    private final NotificationPublisher notificationPublisher;
+
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -109,17 +113,14 @@ public class SocialLoginService extends DefaultOAuth2UserService {
     }
 
     private SocialLogin createOAuth2User(SocialProvider provider, String providerId, String name, String email) {
-        User newUser = User.create(UserRole.USER);
-        User savedUser = userRepository.save(newUser);
+        User savedUser = userRepository.save(User.create(UserRole.USER));
 
-        SocialLogin socialLogin = SocialLogin.create(
-            savedUser,
-            provider,
-            providerId,
-            email
-        );
+        SocialLogin socialLogin = SocialLogin.create(savedUser, provider, providerId, email);
+        SocialLogin savedSocialLogin = socialLoginRepository.save(socialLogin);
 
-        return socialLoginRepository.save(socialLogin);
+        notificationPublisher.publish(NotificationPublishCommand.welcome(savedUser.getUserId()));
+
+        return savedSocialLogin;
     }
 
     private record ParsedOAuthUser(String providerId, String name, String email) { }

@@ -73,4 +73,19 @@ public record NotificationPublishCommand(
 			String.valueOf(roomId)
 		);
 	}
+
+	/**
+	 * 알림 테스트용
+	 */
+	public static NotificationPublishCommand welcome(UUID userId) {
+		return new NotificationPublishCommand(
+			userId,
+			NotificationType.WELCOME,
+			"환영합니다!",
+			"회원가입이 완료되었습니다. 경매를 시작해보세요.",
+			"/",
+			RelatedEntityType.USER,
+			userId.toString()
+		);
+	}
 }
