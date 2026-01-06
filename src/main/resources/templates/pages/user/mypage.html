@@ -35,7 +35,6 @@
                 <div class="flex-1">
                     <p class="text-sm text-gray-600">닉네임</p>
                     <h2 class="text-2xl font-bold text-gray-900" id="profileNickname">닉네임</h2>
-                    <p class="text-sm text-gray-500 mt-1" id="profileUserId">사용자ID</p>
                 </div>
             </div>
 
@@ -174,7 +173,6 @@
                 }
 
                 document.getElementById('profileNickname').textContent = profile.nickname;
-                document.getElementById('profileUserId').textContent = profile.userId;
                 document.getElementById('tradeCount').textContent = profile.tradeCount;
                 document.getElementById('ratingAvg').textContent = profile.ratingAvg.toFixed(2);
                 document.getElementById('reportCount').textContent = profile.reportCount;
