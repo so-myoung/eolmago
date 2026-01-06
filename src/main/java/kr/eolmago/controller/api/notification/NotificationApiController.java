@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 
+import kr.eolmago.dto.api.common.PageResponse;
 import kr.eolmago.dto.api.notification.response.NotificationResponse;
 import kr.eolmago.global.security.CustomUserDetails;
 import kr.eolmago.service.notification.NotificationService;
@@ -29,15 +30,15 @@ public class NotificationApiController {
 	@Operation(summary = "내 알림 목록 조회(페이징)")
 	@SecurityRequirement(name = "bearerAuth")
 	@GetMapping
-	public Page<NotificationResponse> list(
+	public PageResponse<NotificationResponse> list(
 		@AuthenticationPrincipal CustomUserDetails me,
-		@Parameter(description = "페이지(0부터 시작)", example = "0")
 		@RequestParam(defaultValue = "0") int page,
-		@Parameter(description = "페이지 크기", example = "20")
 		@RequestParam(defaultValue = "20") int size
 	) {
 		UUID userId = notificationValidator.validateAndGetUserId(me);
-		return notificationService.list(userId, page, size);
+
+		Page<NotificationResponse> result = notificationService.list(userId, page, size);
+		return PageResponse.of1Based(result);
 	}
 
 	@Operation(summary = "안 읽은 알림 개수 조회")
