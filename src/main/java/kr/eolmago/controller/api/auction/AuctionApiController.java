@@ -1,12 +1,15 @@
 package kr.eolmago.controller.api.auction;
 
 import kr.eolmago.dto.api.auction.response.AuctionListResponse;
-import kr.eolmago.global.common.dto.PageResponse;
+import kr.eolmago.dto.api.common.PageResponse;
 import kr.eolmago.service.auction.AuctionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 경매 REST API Controller

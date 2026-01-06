@@ -156,6 +156,8 @@ public class DataInitializer implements ApplicationRunner {
                 endAt = null;
             }
 
+            int bidIncrement = 5000;               // 원하는 값(최소단위)
+
             Auction auction = Auction.create(
                     item,
                     seller,
@@ -223,6 +225,8 @@ public class DataInitializer implements ApplicationRunner {
                 startAt = null;
                 endAt = null;
             }
+
+            int bidIncrement = 10000;
 
             Auction auction = Auction.create(
                     item,
@@ -322,6 +326,9 @@ public class DataInitializer implements ApplicationRunner {
         return keywords;
     }
 
+    /**
+     * 브랜드 키워드 판단 (SearchKeywordService와 동일)
+     */
     private boolean isBrandKeyword(String keyword) {
         String lowerKeyword = keyword.toLowerCase();
         return lowerKeyword.matches(".*(아이폰|갤럭시|픽셀|샤오미|애플|삼성|apple|samsung|google|xiaomi).*");
