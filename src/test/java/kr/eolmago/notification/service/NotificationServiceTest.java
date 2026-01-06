@@ -5,24 +5,28 @@ import static org.mockito.Mockito.*;
 
 import java.time.OffsetDateTime;
 
-import kr.eolmago.service.notification.NotificationCommandService;
-
+import kr.eolmago.service.notification.NotificationService;
+import kr.eolmago.service.notification.exception.NotificationNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
-class NotificationCommandServiceTest {
+class NotificationServiceTest {
 
-	private NotificationCommandServiceTestDoubles doubles;
-	private NotificationCommandService sut;
+	private NotificationServiceTestDoubles doubles;
+	private NotificationService sut;
 
 	@BeforeEach
 	void setUp() {
-		doubles = NotificationCommandServiceTestDoubles.create();
-		sut = new NotificationCommandService(doubles.notificationRepository);
+		doubles = NotificationServiceTestDoubles.create();
+		sut = new NotificationService(
+			doubles.notificationRepository,
+			doubles.notificationValidator,
+			doubles.notificationMapper,
+			doubles.sseHub,
+			doubles.clock
+		);
 	}
 
 	private NotificationScenario given() {
@@ -30,7 +34,7 @@ class NotificationCommandServiceTest {
 	}
 
 	@Test
-	@DisplayName("알림 1건 읽음 처리: 존재하면 readAt 설정")
+	@DisplayName("알림 1건 읽음 처리: 존재하면 markRead 호출")
 	void givenNotificationExists_whenReadOne_thenMarkRead() {
 		// Given
 		NotificationScenario s = given().notificationExists();
@@ -45,23 +49,20 @@ class NotificationCommandServiceTest {
 	}
 
 	@Test
-	@DisplayName("알림 1건 읽음 처리: 없으면 404")
-	void givenNotificationMissing_whenReadOne_thenThrow404() {
+	@DisplayName("알림 1건 읽음 처리: 없으면 NOT_FOUND")
+	void givenNotificationMissing_whenReadOne_thenThrowNotFound() {
 		// Given
-		NotificationScenario s = given();
+		NotificationScenario s = given(); // repo 기본값 Optional.empty
 
 		// When
 		Throwable t = catchThrowable(() -> sut.readOne(s.userId, s.notificationId));
 
 		// Then
-		assertThat(t).isInstanceOf(ResponseStatusException.class);
-		ResponseStatusException ex = (ResponseStatusException) t;
-		assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-		assertThat(ex.getReason()).contains("알림을 찾을 수 없습니다.");
+		assertThat(t).isInstanceOf(NotificationNotFoundException.class);
 	}
 
 	@Test
-	@DisplayName("알림 삭제: 존재하면 soft delete 처리")
+	@DisplayName("알림 삭제: 존재하면 softDelete 호출")
 	void givenNotificationExists_whenDelete_thenSoftDelete() {
 		// Given
 		NotificationScenario s = given().notificationExists();
@@ -76,8 +77,8 @@ class NotificationCommandServiceTest {
 	}
 
 	@Test
-	@DisplayName("알림 삭제: 없으면 404")
-	void givenNotificationMissing_whenDelete_thenThrow404() {
+	@DisplayName("알림 삭제: 없으면 NOT_FOUND")
+	void givenNotificationMissing_whenDelete_thenThrowNotFound() {
 		// Given
 		NotificationScenario s = given();
 
@@ -85,10 +86,7 @@ class NotificationCommandServiceTest {
 		Throwable t = catchThrowable(() -> sut.delete(s.userId, s.notificationId));
 
 		// Then
-		assertThat(t).isInstanceOf(ResponseStatusException.class);
-		ResponseStatusException ex = (ResponseStatusException) t;
-		assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-		assertThat(ex.getReason()).contains("알림을 찾을 수 없습니다.");
+		assertThat(t).isInstanceOf(NotificationNotFoundException.class);
 	}
 
 	@Test
