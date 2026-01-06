@@ -1,16 +1,13 @@
 package kr.eolmago.service.user;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import kr.eolmago.domain.entity.user.SocialLogin;
 import kr.eolmago.domain.entity.user.User;
 import kr.eolmago.domain.entity.user.UserProfile;
 import kr.eolmago.domain.entity.user.enums.SocialProvider;
+import kr.eolmago.domain.entity.user.enums.UserRole;
 import kr.eolmago.repository.user.SocialLoginRepository;
-import kr.eolmago.repository.user.UserRepository;
 import kr.eolmago.repository.user.UserProfileRepository;
+import kr.eolmago.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +18,10 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -148,6 +149,6 @@ public class SocialLoginService extends DefaultOAuth2UserService {
         }
         return name;
     }
-}
     private record ParsedOAuthUser(String providerId, String name, String email) { }
 }
+
