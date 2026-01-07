@@ -115,7 +115,9 @@ public class SocialLoginService extends DefaultOAuth2UserService {
     }
 
     private SocialLogin createOAuth2User(SocialProvider provider, String providerId, String name, String email) {
-        User savedUser = userRepository.save(User.create(UserRole.USER));
+        // ToDo UserRole.GUEST -> 전화번호 인증 -> UserRole.USER
+        User newUser = User.create(UserRole.USER);
+        User savedUser = userRepository.save(newUser);
 
         // 2) SocialLogin 생성
         SocialLogin socialLogin = SocialLogin.create(savedUser, provider, providerId, email);
