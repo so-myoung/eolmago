@@ -10,6 +10,7 @@ import kr.eolmago.dto.api.report.response.ReportResponse;
 import kr.eolmago.repository.auction.AuctionRepository;
 import kr.eolmago.repository.report.ReportRepository;
 import kr.eolmago.repository.user.UserRepository;
+import kr.eolmago.service.user.UserPenaltyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
+    private final UserPenaltyService userPenaltyService;
 
     // 신고 접수
     public Long createReport(UUID reporterId, CreateReportRequest request) {
@@ -54,7 +56,7 @@ public class ReportService {
     public Page<ReportResponse> getMyReports(UUID userId, Pageable pageable) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-        return reportRepository.findByReporter(user, pageable)
+        return reportRepository.findByReporterWithDetails(user, pageable)
                 .map(ReportResponse::from);
     }
 
@@ -69,7 +71,7 @@ public class ReportService {
     // 신고 목록 전체 조회 (관리자)
     @Transactional(readOnly = true)
     public Page<ReportResponse> getAllReports(Pageable pageable) {
-        return reportRepository.findAll(pageable)
+        return reportRepository.findAllWithDetails(pageable)
                 .map(ReportResponse::from);
     }
 
@@ -95,7 +97,9 @@ public class ReportService {
             throw new IllegalStateException("검토 중인 신고만 처리할 수 있습니다");
         }
 
-        // ToDo User 상태 변경 + UserPenalty
+        // User 상태 변경 + UserPenalty
+        userPenaltyService.applyPenalty(report.getReportedUser(), report, action, actionMemo);
+
         report.updateStatus(ReportStatus.RESOLVED);
         report.updateResolvedAt(OffsetDateTime.now());
         report.updateAction(action);
