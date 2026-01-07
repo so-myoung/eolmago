@@ -1,5 +1,6 @@
 package kr.eolmago.domain.entity.report;
 
+import jakarta.persistence.*;
 import kr.eolmago.domain.entity.auction.Auction;
 import kr.eolmago.domain.entity.common.AuditableEntity;
 import kr.eolmago.domain.entity.report.enums.ReportAction;
@@ -7,20 +8,18 @@ import kr.eolmago.domain.entity.report.enums.ReportReason;
 import kr.eolmago.domain.entity.report.enums.ReportStatus;
 import kr.eolmago.domain.entity.report.enums.ReportTargetType;
 import kr.eolmago.domain.entity.user.User;
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
-import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Table(
         name = "reports",
         indexes = {
-                @Index(name = "idx_reports_status_created", columnList = "status,created_at")
+                @Index(name = "idx_reports_status_created", columnList = "status,created_at"),
+                @Index(name = "idx_reports_reporter_created", columnList = "reporter_id,created_at")
         }
 )
 @Getter
@@ -93,5 +92,21 @@ public class Report extends AuditableEntity {
         report.status = ReportStatus.PENDING;
 
         return report;
+    }
+
+    public void updateStatus(ReportStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    public void updateAction(ReportAction action) {
+        this.action = action;
+    }
+
+    public void UpdateActionMemo(String newActionMemo) {
+        this.actionMemo = newActionMemo;
+    }
+
+    public void updateResolvedAt(OffsetDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 }
