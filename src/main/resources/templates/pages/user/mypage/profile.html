@@ -79,7 +79,10 @@
             </div>
 
             <div class="space-y-2">
-                <label for="phoneNumber" class="block text-sm font-semibold text-gray-900">휴대폰 번호</label>
+                <div class="flex items-center gap-2">
+                    <label for="phoneNumber" class="block text-sm font-semibold text-gray-900">휴대폰 번호</label>
+                    <span id="phoneAuthStatus" class="text-xs font-medium"></span>
+                </div>
                 <div class="flex gap-3">
                     <input type="text" id="phoneNumber" name="phoneNumber" placeholder="01012345678"
                            class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder:text-gray-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
@@ -89,12 +92,6 @@
                     </button>
                 </div>
                 <span class="text-xs text-red-600 hidden" id="phoneError"></span>
-                <div id="phoneVerifiedBadge" class="hidden flex items-center gap-2 text-xs text-green-600">
-                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span>휴대폰 번호 인증 완료</span>
-                </div>
             </div>
 
             <div id="verificationCodeSection" class="space-y-2 hidden">
@@ -108,7 +105,7 @@
                     </button>
                 </div>
                 <span class="text-xs text-red-600 hidden" id="verificationError"></span>
-                <span class="text-xs text-gray-500" id="verificationTimer"></span>
+                <span class="text-xs text-gray-500 font-medium" id="verificationTimer"></span>
             </div>
 
             <div class="space-y-2">
@@ -140,6 +137,7 @@
 <th:block layout:fragment="scripts">
     <script>
         let currentProfile = null;
+        let timerInterval; // 타이머 인터벌 변수
 
         async function apiCall(url, options = {}) {
             try {
@@ -148,11 +146,70 @@
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.message || `HTTP ${response.status}`);
                 }
-                return await response.json().catch(() => ({}));
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return await response.json();
+                }
+                return {};
             } catch (error) {
                 console.error('API Error:', error);
                 throw error;
             }
+        }
+
+        function updatePhoneAuthUI(isVerified) {
+            const phoneInput = document.getElementById('phoneNumber');
+            const sendBtn = document.getElementById('sendVerificationBtn');
+            const verificationSection = document.getElementById('verificationCodeSection');
+            const statusBadge = document.getElementById('phoneAuthStatus');
+
+            if (isVerified) {
+                phoneInput.readOnly = true;
+                phoneInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                sendBtn.disabled = true;
+                sendBtn.classList.add('bg-gray-400', 'cursor-not-allowed', 'hover:bg-gray-400');
+                sendBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                verificationSection.classList.add('hidden');
+                statusBadge.textContent = '인증 완료';
+                statusBadge.className = 'text-xs font-medium text-green-600';
+            } else {
+                phoneInput.readOnly = false;
+                phoneInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'hover:bg-gray-400');
+                sendBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                statusBadge.textContent = '미인증';
+                statusBadge.className = 'text-xs font-medium text-red-600';
+            }
+        }
+
+        // 타이머 시작 함수 (duration: 초 단위)
+        function startTimer(duration, display) {
+            let timer = duration, minutes, seconds;
+
+            // 기존 타이머가 있다면 제거
+            if (timerInterval) clearInterval(timerInterval);
+
+            function updateDisplay() {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = "남은 시간: " + minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    display.textContent = "인증 시간이 만료되었습니다.";
+                    display.classList.add('text-red-600');
+                } else {
+                    display.classList.remove('text-red-600');
+                }
+            }
+
+            updateDisplay(); // 즉시 한 번 실행
+            timerInterval = setInterval(updateDisplay, 1000);
         }
 
         async function loadProfile() {
@@ -169,7 +226,7 @@
                 if (profile.profileImageUrl) {
                     profileImage.src = profile.profileImageUrl;
                 } else {
-                    profileImage.src = '/images/profile/base.png';  // 기본 이미지
+                    profileImage.src = '/images/profile/base.png';
                 }
 
                 document.getElementById('profileNickname').textContent = profile.nickname;
@@ -182,12 +239,7 @@
                 document.getElementById('phoneNumber').value = profile.phoneNumber || '';
                 document.getElementById('profileImageUrl').value = profile.profileImageUrl || '';
 
-                const phoneVerifiedBadge = document.getElementById('phoneVerifiedBadge');
-                if (profile.phoneVerified) {
-                    phoneVerifiedBadge.classList.remove('hidden');
-                } else {
-                    phoneVerifiedBadge.classList.add('hidden');
-                }
+                updatePhoneAuthUI(profile.phoneVerified);
 
                 loadingSpinner.classList.add('hidden');
                 profileCard.classList.remove('hidden');
@@ -215,6 +267,11 @@
                 return;
             }
 
+            if (currentProfile && nickname === currentProfile.nickname) {
+                nicknameSuccess.classList.remove('hidden');
+                return;
+            }
+
             try {
                 const response = await apiCall('/api/users/checkNickname', {
                     method: 'POST',
@@ -239,6 +296,7 @@
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
             const phoneError = document.getElementById('phoneError');
             const verificationSection = document.getElementById('verificationCodeSection');
+            const verificationTimer = document.getElementById('verificationTimer');
 
             phoneError.classList.add('hidden');
 
@@ -260,6 +318,10 @@
                 });
                 alert('인증 코드가 발송되었습니다');
                 verificationSection.classList.remove('hidden');
+
+                // 타이머 시작 (5분 = 300초)
+                startTimer(300, verificationTimer);
+
             } catch (error) {
                 phoneError.textContent = '인증 코드 발송 중 오류가 발생했습니다';
                 phoneError.classList.remove('hidden');
@@ -288,8 +350,8 @@
                 });
 
                 if (response.verified) {
-                    alert('휴대폰 번호 인증이 완료되었습니다');
-                    document.getElementById('verificationCodeSection').classList.add('hidden');
+                    if (timerInterval) clearInterval(timerInterval); // 타이머 정지
+                    alert('휴대폰 번호 인증이 완료되었습니다. 페이지를 새로고침합니다.');
                     location.reload();
                 } else {
                     verificationError.textContent = response.message || '인증에 실패했습니다';
@@ -307,7 +369,7 @@
 
             const name = document.getElementById('name').value.trim();
             const nickname = document.getElementById('nickname').value.trim();
-            const phoneNumber = document.getElementById('phoneNumber').value.trim() || null;
+            const phoneNumber = currentProfile.phoneVerified ? currentProfile.phoneNumber : (document.getElementById('phoneNumber').value.trim() || null);
             const profileImageUrl = document.getElementById('profileImageUrl').value.trim() || null;
 
             const nameError = document.getElementById('nameError');

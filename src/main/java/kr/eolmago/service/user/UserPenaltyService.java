@@ -31,14 +31,14 @@ public class UserPenaltyService {
         OffsetDateTime now = OffsetDateTime.now();
 
         switch (action) {
+            case SUSPEND_1D -> {
+                penaltyType = PenaltyType.SUSPENDED;
+                expiresAt = now.plusDays(1);
+                user.updateStatus(UserStatus.SUSPENDED);
+            }
             case SUSPEND_7D -> {
                 penaltyType = PenaltyType.SUSPENDED;
                 expiresAt = now.plusDays(7);
-                user.updateStatus(UserStatus.SUSPENDED);
-            }
-            case SUSPEND_30D -> {
-                penaltyType = PenaltyType.SUSPENDED;
-                expiresAt = now.plusDays(30);
                 user.updateStatus(UserStatus.SUSPENDED);
             }
             case BAN -> {
