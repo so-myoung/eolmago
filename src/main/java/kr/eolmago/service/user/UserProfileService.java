@@ -1,6 +1,8 @@
 package kr.eolmago.service.user;
 
+import kr.eolmago.domain.entity.user.User;
 import kr.eolmago.domain.entity.user.UserProfile;
+import kr.eolmago.domain.entity.user.enums.UserRole;
 import kr.eolmago.dto.api.user.request.UpdateUserProfileRequest;
 import kr.eolmago.dto.api.user.response.UserProfileResponse;
 import kr.eolmago.repository.user.UserProfileRepository;
@@ -18,6 +20,9 @@ import java.util.UUID;
 public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
+    private final VerificationCodeService verificationCodeService;
+    private final UserService userService;
+
 
     /**
      * 사용자 프로필 조회
@@ -80,55 +85,58 @@ public class UserProfileService {
 
     /**
      * 핸드폰 인증 코드 발송
-     * TODO: CoolSMS 구현
      */
     public void sendPhoneVerificationCode(UUID userId, String phoneNumber) {
-        log.debug("핸드폰 인증 코드 발송 기능은 테스트를 위해 임시로 비활성화되었습니다.");
-        // log.debug("핸드폰 인증 코드 발송: userId={}, phoneNumber={}", userId, phoneNumber);
+        log.debug("핸드폰 인증 코드 발송: userId={}, phoneNumber={}", userId, phoneNumber);
 
-        // UserProfile userProfile = userProfileRepository.findByUserIdWithUser(userId)
-        //         .orElseThrow(() -> new IllegalArgumentException("프로필을 찾을 수 없습니다"));
+        userProfileRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new IllegalArgumentException("프로필을 찾을 수 없습니다"));
 
-        // // 핸드폰 번호 유효성 검사
-        // if (!phoneNumber.matches("^\\d{10,11}$")) {
-        //     throw new IllegalArgumentException("유효한 핸드폰 번호가 아닙니다");
-        // }
+        // 핸드폰 번호 유효성 검사
+        if (!phoneNumber.matches("^\\d{10,11}$")) {
+            throw new IllegalArgumentException("유효한 핸드폰 번호가 아닙니다");
+        }
 
-        // // TODO: CoolSMS를 통해 인증 코드 발송
-        // // SmsService.sendVerificationCode(phoneNumber)를 호출할 예정
+        verificationCodeService.generateAndSendVerificationCode(phoneNumber);
 
-        // log.info("인증 코드 발송 완료: userId={}, phoneNumber={}", userId, phoneNumber);
+        log.info("인증 코드 발송 완료: userId={}, phoneNumber={}", userId, phoneNumber);
     }
 
     /**
      * 핸드폰 인증 코드 검증
      */
     public void verifyPhoneNumber(UUID userId, String phoneNumber, String verificationCode) {
-        log.debug("핸드폰 인증 기능은 테스트를 위해 임시로 비활성화되었습니다.");
-        // log.debug("핸드폰 인증: userId={}, phoneNumber={}", userId, phoneNumber);
+        log.debug("핸드폰 인증: userId={}, phoneNumber={}", userId, phoneNumber);
 
-        // UserProfile userProfile = userProfileRepository.findByUserIdWithUser(userId)
-        //         .orElseThrow(() -> new IllegalArgumentException("프로필을 찾을 수 없습니다"));
+        UserProfile userProfile = userProfileRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new IllegalArgumentException("프로필을 찾을 수 없습니다"));
 
-        // // 인증 코드 검증 (Redis에서 조회)
-        // if (!verificationCodeService.verifyCode(phoneNumber, verificationCode)) {
-        //     throw new IllegalArgumentException("인증 코드가 일치하지 않습니다");
-        // }
+        // 인증 코드 검증
+        if (!verificationCodeService.verifyCode(phoneNumber, verificationCode)) {
+            throw new IllegalArgumentException("인증 코드가 일치하지 않습니다");
+        }
 
-        // // 프로필 업데이트 (핸드폰 번호 + 인증 완료)
-        // userProfile.updateProfile(
-        //         userProfile.getName(),
-        //         userProfile.getNickname(),
-        //         phoneNumber,
-        //         userProfile.getProfileImageUrl()
-        // );
-        // userProfile.verifyPhoneNumber();
+        // 프로필 업데이트 (핸드폰 번호 + 인증 완료)
+        userProfile.updateProfile(
+                userProfile.getName(),
+                userProfile.getNickname(),
+                phoneNumber,
+                userProfile.getProfileImageUrl()
+        );
+        userProfile.verifyPhoneNumber();
 
-        // userProfileRepository.save(userProfile);
+        userProfileRepository.save(userProfile);
 
-        // // Redis에서 인증 코드 삭제
-        // verificationCodeService.deleteVerificationCode(phoneNumber);
+        // 사용자 역할 변경 (GUEST -> USER)
+        User user = userProfile.getUser();
+        if (user.getRole() == UserRole.GUEST) {
+            user.updateRole(UserRole.USER);
+            log.info("사용자 역할 변경: userId={}, newRole=USER", userId);
+        }
 
-        // log.info("핸드폰 인증 완료: userId={}, phoneNumber={}", userId, phoneNumber);
+        // Redis에서 인증 코드 삭제
+        verificationCodeService.deleteVerificationCode(phoneNumber);
+
+        log.info("핸드폰 인증 완료: userId={}, phoneNumber={}", userId, phoneNumber);
     }
 }
