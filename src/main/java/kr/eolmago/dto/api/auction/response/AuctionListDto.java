@@ -9,10 +9,13 @@ import java.util.UUID;
 public record AuctionListDto(
         UUID auctionId,
         Long auctionItemId,
+        String itemName,
         String title,
         String thumbnailUrl,
         String sellerNickname,
+        Integer startPrice,
         Integer currentPrice,
+        Long finalPrice,
         int bidCount,
         int viewCount,
         int favoriteCount,
