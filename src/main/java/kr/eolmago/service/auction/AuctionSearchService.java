@@ -125,10 +125,10 @@ public class AuctionSearchService {
         }
 
         // 3. 검색 결과가 있으면 통계 기록 (키워드만)
-        if (result.pageInfo().totalElements() > 0 && !keywordType.equals("CHOSUNG")) {
+        if (result.pageInfo().totalElements() > 0 && !keywordType.equals("CHOSUNG") && keyword != null) {
             try {
                 searchKeywordService.recordSearch(trimmedKeyword, userId);
-                log.debug("검색어 통계 기록 완료: keyword={}, userId={}", keyword, userId);
+                log.debug("검색어 통계 기록 완료: keyword={}, userId={}", trimmedKeyword, userId);
             } catch (Exception e) {
                 // 통계 기록 실패해도 검색 결과는 반환
                 log.error("검색어 통계 기록 실패: keyword={}", trimmedKeyword, e);
