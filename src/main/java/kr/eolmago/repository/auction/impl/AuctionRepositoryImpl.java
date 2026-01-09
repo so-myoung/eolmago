@@ -36,6 +36,7 @@ public class AuctionRepositoryImpl implements AuctionRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
+    // 경매 목록 조회
     @Override
     public Page<AuctionListDto> searchList(
             Pageable pageable,
@@ -111,6 +112,7 @@ public class AuctionRepositoryImpl implements AuctionRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
+    // 경매 상세 조회
     @Override
     public Optional<AuctionDetailDto> findDetailById(UUID auctionId) {
         AuctionDetailDto result = queryFactory

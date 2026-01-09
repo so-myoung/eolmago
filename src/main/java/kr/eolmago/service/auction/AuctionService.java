@@ -202,7 +202,6 @@ public class AuctionService {
     }
 
     // 경매 목록 조회
-    // 경매 목록 조회
     public PageResponse<AuctionListResponse> getAuction(
             int page,
             int size,
