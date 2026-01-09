@@ -102,7 +102,8 @@ public class AuctionSearchRepositoryCustomImpl implements AuctionSearchRepositor
 
         // WHERE 절 생성
         String whereClause = buildWhereClause(category, brands, minPrice, maxPrice, status);
-        whereClause += "AND to_tsvector('simple', ai.item_name || ' ' || COALESCE(a.description, '')) @@ to_tsquery('simple', :processedKeyword) ";
+        // item_name, title, description 모두 검색 대상에 포함
+        whereClause += "AND to_tsvector('simple', ai.item_name || ' ' || COALESCE(a.title, '') || ' ' || COALESCE(a.description, '')) @@ to_tsquery('simple', :processedKeyword) ";
 
         // ORDER BY 절 생성
         String orderBy = buildOrderBy(sort);
@@ -146,10 +147,11 @@ public class AuctionSearchRepositoryCustomImpl implements AuctionSearchRepositor
 
         // WHERE 절 생성
         String whereClause = buildWhereClause(category, brands, minPrice, maxPrice, status);
-        whereClause += "AND word_similarity(:keyword, ai.item_name) > :threshold ";
+        // item_name 또는 title 중 하나라도 유사도가 높으면 검색 결과에 포함
+        whereClause += "AND GREATEST(word_similarity(:keyword, ai.item_name), word_similarity(:keyword, COALESCE(a.title, ''))) > :threshold ";
 
-        // ORDER BY 절 (Trigram 유사도 우선)
-        String orderBy = "ORDER BY word_similarity(:keyword, ai.item_name) DESC ";
+        // ORDER BY 절 (Trigram 유사도 우선 - 가장 높은 유사도 기준)
+        String orderBy = "ORDER BY GREATEST(word_similarity(:keyword, ai.item_name), word_similarity(:keyword, COALESCE(a.title, ''))) DESC ";
 
         // 메인 쿼리 조립
         String sql = BASE_SELECT + whereClause + orderBy + PAGINATION;
@@ -190,7 +192,8 @@ public class AuctionSearchRepositoryCustomImpl implements AuctionSearchRepositor
 
         // WHERE 절 생성
         String whereClause = buildWhereClause(category, brands, minPrice, maxPrice, status);
-        whereClause += "AND extract_chosung(ai.item_name) LIKE :chosungPattern ";
+        // item_name 또는 title 중 하나라도 초성이 매칭되면 검색 결과에 포함
+        whereClause += "AND (extract_chosung(ai.item_name) LIKE :chosungPattern OR extract_chosung(COALESCE(a.title, '')) LIKE :chosungPattern) ";
 
         // ORDER BY 절 생성
         String orderBy = buildOrderBy(sort);
