@@ -4,11 +4,11 @@
         const params = new URLSearchParams({
             page: "0",
             size: String(size),
-            sort: sort,
+            sortKey: sort,
             status: "LIVE"
         });
 
-        const response = await fetch(`/api/auctions?${params.toString()}`, {
+        const response = await fetch(`/api/auctions/list?${params.toString()}`, {
             method: "GET",
             headers: { Accept: "application/json" }
         });
