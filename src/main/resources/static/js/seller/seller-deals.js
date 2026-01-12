@@ -1,377 +1,337 @@
-(function () {
-    let allDeals = []; // 전체 거래 데이터
-    let currentTab = 'all'; // 현재 선택된 탭 (기본: 전체)
-    let selectedDealId = null; // 모달에서 사용할 거래 ID
+// 판매자 거래 관리 페이지 스크립트
 
-    // 모달 요소
-    const modal = document.getElementById('seller-confirm-modal');
-    const confirmDealBtn = document.getElementById('confirm-deal-btn');
-    const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
-    const confirmCheckbox = document.getElementById('seller-confirm-checkbox');
+(() => {
+    const API_URL = '/api/seller/deals';
 
-    // 탭 전환
-    const tabButtons = document.querySelectorAll('.seller-deal-tab-btn');
-    const tabContents = document.querySelectorAll('.seller-deal-tab-content');
+    /** 탭 이름 상수 */
+    const TABS = ['all', 'pending', 'ongoing', 'completed', 'cancelled'];
 
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
-            currentTab = tabName;
+    /** 상태별 탭 매핑 */
+    const STATUS_TO_TAB = {
+        PENDING_CONFIRMATION: 'pending',   // 거래 대기
+        CONFIRMED: 'ongoing',             // 진행 중
+        COMPLETED: 'completed',           // 완료
+        TERMINATED: 'cancelled',          // 취소/만료
+        EXPIRED: 'cancelled'              // 취소/만료
+    };
 
-            // 모든 탭 버튼 비활성화
-            tabButtons.forEach(b => {
-                b.classList.remove('border-gray-900', 'text-gray-900', 'font-semibold');
-                b.classList.add('border-transparent', 'text-gray-500', 'font-medium');
-            });
-
-            // 클릭한 탭 버튼 활성화
-            btn.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
-            btn.classList.add('border-gray-900', 'text-gray-900', 'font-semibold');
-
-            // 모든 탭 콘텐츠 숨기기
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-
-            // 선택한 탭 콘텐츠 표시
-            const targetContent = document.getElementById(`tab-${tabName}`);
-            if (targetContent) {
-                targetContent.classList.remove('hidden');
-            }
-
-            // 해당 탭에 맞는 데이터 표시
-            displayFilteredDeals(tabName);
-        });
-    });
-
-    // 데이터 로드
-    async function loadDeals() {
-        console.log('=== API 호출 시작 ===');
-
-        try {
-            const response = await fetch('/api/seller/deals', {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            console.log('Response status:', response.status);
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                throw new Error('API 호출 실패: ' + response.status);
-            }
-
-            const data = await response.json();
-            console.log('=== 받은 데이터 ===', data);
-
-            // 전체 데이터 저장
-            allDeals = data.deals || [];
-
-            // 탭별 카운트 업데이트
-            updateTabCounts(allDeals);
-
-            // 현재 탭에 맞는 데이터 표시
-            displayFilteredDeals(currentTab);
-
-        } catch (error) {
-            console.error('=== 에러 발생 ===', error);
-            showError('데이터를 불러오는데 실패했습니다: ' + error.message);
+    /** 상태 표시용 설정 */
+    const STATUS_CONFIG = {
+        PENDING_CONFIRMATION: {
+            label: '거래 대기',
+            badgeClass: 'bg-yellow-100 text-yellow-800',
+        },
+        CONFIRMED: {
+            label: '진행 중',
+            badgeClass: 'bg-blue-100 text-blue-800',
+        },
+        COMPLETED: {
+            label: '완료',
+            badgeClass: 'bg-green-100 text-green-800',
+        },
+        TERMINATED: {
+            label: '취소됨',
+            badgeClass: 'bg-red-100 text-red-800',
+        },
+        EXPIRED: {
+            label: '만료됨',
+            badgeClass: 'bg-gray-100 text-gray-800',
+        },
+        DEFAULT: {
+            label: '알 수 없음',
+            badgeClass: 'bg-gray-100 text-gray-800',
         }
+    };
+
+    let allDeals = [];
+    let currentTab = 'all';
+
+    /** 공통 fetch 유틸 */
+    async function fetchJson(url, options = {}) {
+        const resp = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'include',
+            ...options,
+        });
+
+        if (!resp.ok) {
+            let message = `요청에 실패했습니다. (HTTP ${resp.status})`;
+            try {
+                const data = await resp.json();
+                if (data && data.message) {
+                    message = data.message;
+                }
+            } catch (e) {
+                // noop
+            }
+            throw new Error(message);
+        }
+
+        return resp.json();
     }
 
-    // 탭별 거래 개수 업데이트
-    function updateTabCounts(deals) {
+    /** 날짜 포맷팅 */
+    function formatDate(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+
+        return new Intl.DateTimeFormat('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
+    }
+
+    /** 금액 포맷팅 */
+    function formatPrice(value) {
+        if (value == null) return '-';
+        const num = Number(value);
+        if (Number.isNaN(num)) return '-';
+        return `${num.toLocaleString('ko-KR')}원`;
+    }
+
+    /** 상태 텍스트 + 뱃지 클래스 */
+    function getStatusMeta(status) {
+        return STATUS_CONFIG[status] || STATUS_CONFIG.DEFAULT;
+    }
+
+    /** 현재 탭에 맞게 거래 필터링 */
+    function filterDealsByTab(tabName) {
+        if (tabName === 'all') return allDeals;
+
+        return allDeals.filter((deal) => {
+            const mappedTab = STATUS_TO_TAB[deal.status];
+            return mappedTab === tabName;
+        });
+    }
+
+    /** 탭 카운트 업데이트 */
+    function updateTabCounts() {
         const counts = {
-            all: deals.length,
+            all: allDeals.length,
             pending: 0,
             ongoing: 0,
             completed: 0,
-            cancelled: 0  // 취소 + 만료
+            cancelled: 0,
         };
 
-        deals.forEach(deal => {
-            const status = deal.status;
-            if (status === 'PENDING_CONFIRMATION') {
-                counts.pending++;
-            } else if (status === 'CONFIRMED') {
-                counts.ongoing++;
-            } else if (status === 'COMPLETED') {
-                counts.completed++;
-            } else if (status === 'TERMINATED' || status === 'EXPIRED') {
-                counts.cancelled++;  // 취소와 만료 합산
+        allDeals.forEach((deal) => {
+            const tab = STATUS_TO_TAB[deal.status];
+            if (tab && counts[tab] != null) {
+                counts[tab] += 1;
             }
         });
 
-        // 카운트 업데이트
-        document.getElementById('all-count').textContent = counts.all;
-        document.getElementById('pending-count').textContent = counts.pending;
-        document.getElementById('ongoing-count').textContent = counts.ongoing;
-        document.getElementById('completed-count').textContent = counts.completed;
-        document.getElementById('cancelled-count').textContent = counts.cancelled;
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        setText('all-count', counts.all);
+        setText('pending-count', counts.pending);
+        setText('ongoing-count', counts.ongoing);
+        setText('completed-count', counts.completed);
+        setText('cancelled-count', counts.cancelled);
     }
 
-    // 탭에 맞는 거래 필터링 및 표시
-    function displayFilteredDeals(tabName) {
-        let filteredDeals = [];
-        let containerSelector = '';
-        let emptyMessage = '';
+    /** 탭 콘텐츠 안에서 실제 리스트를 렌더링할 컨테이너 찾기
+     *  (HTML 구조가 약간 바뀌어도 최대한 잘 찾도록 여유 있게 작성)
+     */
+    function getListContainer(tabName) {
+        const root = document.getElementById(`tab-${tabName}`);
+        if (!root) return null;
 
-        // 탭별 필터링
-        switch(tabName) {
-            case 'all':
-                filteredDeals = allDeals; // 전체
-                containerSelector = '#tab-all .space-y-4';
-                emptyMessage = '거래가 없습니다';
-                break;
-            case 'pending':
-                filteredDeals = allDeals.filter(d => d.status === 'PENDING_CONFIRMATION');
-                containerSelector = '#tab-pending .space-y-4';
-                emptyMessage = '거래 대기 중인 거래가 없습니다';
-                break;
-            case 'ongoing':
-                filteredDeals = allDeals.filter(d => d.status === 'CONFIRMED');
-                containerSelector = '#tab-ongoing .space-y-4';
-                emptyMessage = '진행 중인 거래가 없습니다';
-                break;
-            case 'completed':
-                filteredDeals = allDeals.filter(d => d.status === 'COMPLETED');
-                containerSelector = '#tab-completed .space-y-4';
-                emptyMessage = '완료된 거래가 없습니다';
-                break;
-            case 'cancelled':
-                // 취소와 만료 모두 포함
-                filteredDeals = allDeals.filter(d => d.status === 'TERMINATED' || d.status === 'EXPIRED');
-                containerSelector = '#tab-cancelled .space-y-4';
-                emptyMessage = '취소/만료된 거래가 없습니다';
-                break;
-        }
+        return (
+            root.querySelector('.space-y-4') ||
+            root.querySelector('.space-y-6') ||
+            root
+        );
+    }
 
-        const container = document.querySelector(containerSelector);
-        if (!container) {
-            console.error('컨테이너를 찾을 수 없습니다:', containerSelector);
-            return;
-        }
+    /** 거래 카드 하나 렌더링 */
+    function createDealCard(deal) {
+        const statusMeta = getStatusMeta(deal.status);
 
-        // 데이터가 없는 경우
-        if (filteredDeals.length === 0) {
+        // 서비스에서 아직 경매 제목/이미지를 내려주지 않으니,
+        // 일단 기본 텍스트와 placeholder 이미지 사용
+        const title = deal.auctionTitle || `거래 #${deal.dealId}`;
+        const thumbnailUrl = deal.thumbnailUrl || '/img/placeholder-image.png';
+
+        const createdAtText = formatDate(deal.createdAt);
+        const priceText = formatPrice(deal.finalPrice);
+
+        return `
+            <div class="relative flex gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <!-- 이미지 -->
+                <div class="flex-shrink-0">
+                    <div class="w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
+                        <img 
+                            src="${thumbnailUrl}" 
+                            alt="상품 이미지" 
+                            class="w-full h-full object-cover"
+                            onerror="this.src='/img/placeholder-image.png';"
+                        />
+                    </div>
+                </div>
+
+                <!-- 본문 -->
+                <div class="flex-1 flex flex-col justify-between min-w-0">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-semibold text-gray-900 truncate">
+                                ${title}
+                            </h2>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusMeta.badgeClass}">
+                                ${statusMeta.label}
+                            </span>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">
+                            생성일시 · ${createdAtText}
+                        </p>
+                    </div>
+
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="text-sm">
+                            <span class="text-gray-500">거래 금액</span>
+                            <span class="ml-2 font-semibold text-gray-900">${priceText}</span>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button
+                                type="button"
+                                class="seller-deal-detail-btn inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                data-deal-id="${deal.dealId}">
+                                상세보기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /** 탭별 리스트 렌더링 */
+    function renderTab(tabName) {
+        const container = getListContainer(tabName);
+        if (!container) return;
+
+        const deals = filterDealsByTab(tabName);
+
+        if (!deals.length) {
+            let message = '';
+            switch (tabName) {
+                case 'pending':
+                    message = '거래 대기 중인 거래가 없습니다';
+                    break;
+                case 'ongoing':
+                    message = '진행 중인 거래가 없습니다';
+                    break;
+                case 'completed':
+                    message = '완료된 거래가 없습니다';
+                    break;
+                case 'cancelled':
+                    message = '취소/만료된 거래가 없습니다';
+                    break;
+                default:
+                    message = '거래가 없습니다';
+            }
+
             container.innerHTML = `
                 <div class="text-center py-12 bg-gray-50 rounded-lg">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    <h3 class="mt-4 text-sm font-semibold text-gray-900">${emptyMessage}</h3>
+                    <h3 class="mt-4 text-sm font-semibold text-gray-900">${message}</h3>
+                    <p class="mt-2 text-sm text-gray-600">모든 거래가 여기에 표시됩니다.</p>
                 </div>
             `;
             return;
         }
 
-        // 거래 카드 목록 표시
-        const dealsHtml = filteredDeals.map(deal => createDealCard(deal)).join('');
-        container.innerHTML = dealsHtml;
+        container.innerHTML = deals.map(createDealCard).join('');
     }
 
-    // 거래 카드 생성
-    function createDealCard(deal) {
-        const statusConfig = {
-            'PENDING_CONFIRMATION': {
-                label: '거래 대기',
-                color: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-            },
-            'CONFIRMED': {
-                label: '진행 중',
-                color: 'bg-blue-100 text-blue-800 border-blue-300'
-            },
-            'COMPLETED': {
-                label: '완료',
-                color: 'bg-green-100 text-green-800 border-green-300'
-            },
-            'TERMINATED': {
-                label: '취소',
-                color: 'bg-red-100 text-red-800 border-red-300'
-            },
-            'EXPIRED': {
-                label: '만료',
-                color: 'bg-gray-100 text-gray-800 border-gray-300'
-            }
-        };
+    /** 탭 전환 */
+    function switchTab(tabName) {
+        currentTab = tabName;
 
-        const status = statusConfig[deal.status] || {
-            label: deal.status,
-            color: 'bg-gray-100 text-gray-800 border-gray-300'
-        };
+        const tabButtons = document.querySelectorAll('.seller-deal-tab-btn');
+        const tabContents = document.querySelectorAll('.seller-deal-tab-content');
 
-        let actionButtons = '';
-        if (deal.status === 'PENDING_CONFIRMATION') {
-            if (deal.sellerConfirmedAt) {
-                actionButtons = `<div class="flex-1 text-center text-sm font-medium text-green-600">판매 확정됨</div>`;
-            } else {
-                actionButtons = `
-                    <button onclick="openConfirmModal(${deal.dealId})"
-                            class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        판매자 확정
-                    </button>
-                `;
-            }
-        } else if (deal.status === 'CONFIRMED') {
-             actionButtons = `<div class="flex-1 text-center text-sm font-medium text-green-600">판매 확정됨</div>`;
+        tabButtons.forEach((btn) => {
+            const isActive = btn.dataset.tab === tabName;
+            btn.classList.toggle('border-gray-900', isActive);
+            btn.classList.toggle('text-gray-900', isActive);
+            btn.classList.toggle('font-semibold', isActive);
+
+            btn.classList.toggle('border-transparent', !isActive);
+            btn.classList.toggle('text-gray-500', !isActive);
+            btn.classList.toggle('font-medium', !isActive);
+        });
+
+        tabContents.forEach((content) => {
+            content.classList.add('hidden');
+        });
+
+        const activeContent = document.getElementById(`tab-${tabName}`);
+        if (activeContent) {
+            activeContent.classList.remove('hidden');
         }
 
-        return `
-            <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
-                <!-- 헤더 -->
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="text-lg font-bold text-gray-900">거래 #${deal.dealId}</span>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${status.color}">
-                                ${status.label}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 내용 -->
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">거래 금액</p>
-                        <p class="text-xl font-bold text-gray-900">
-                            ${Number(deal.finalPrice).toLocaleString('ko-KR')}원
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">생성일</p>
-                        <p class="text-sm font-medium text-gray-700">
-                            ${formatDate(deal.createdAt)}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- 액션 버튼 -->
-                <div class="flex gap-2 pt-4 border-t border-gray-100">
-                    <button onclick="viewDealDetail(${deal.dealId})" 
-                            class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        상세보기
-                    </button>
-                    ${actionButtons}
-                </div>
-            </div>
-        `;
+        renderTab(tabName);
     }
 
-    // 날짜 포맷팅
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        try {
-            const date = new Date(dateString);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
-        } catch (e) {
-            return dateString;
-        }
+    /** 상세보기 버튼 위임 핸들러 */
+    function bindDetailButtonHandler() {
+        document.addEventListener('click', (event) => {
+            const btn = event.target.closest('.seller-deal-detail-btn');
+            if (!btn) return;
+
+            const dealId = btn.dataset.dealId;
+            if (!dealId) return;
+
+            window.location.href = `/seller/deals/${dealId}`;
+        });
     }
 
-    // 에러 메시지 표시
-    function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        errorDiv.textContent = message;
-        document.body.appendChild(errorDiv);
-
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-    }
-
-    // 전역 함수: 거래 상세보기
-    window.viewDealDetail = function(dealId) {
-        window.location.href = `/seller/deals/${dealId}`;
-    };
-
-    // 전역 함수: 모달 열기
-    window.openConfirmModal = function(dealId) {
-        selectedDealId = dealId;
-        confirmCheckbox.checked = false;
-        confirmDealBtn.disabled = true;
-        modal.classList.remove('hidden');
-    };
-
-    // 모달 닫기
-    function closeConfirmModal() {
-        modal.classList.add('hidden');
-        selectedDealId = null;
-    }
-
-    // 체크박스 상태에 따라 확인 버튼 활성화/비활성화
-    confirmCheckbox.addEventListener('change', () => {
-        confirmDealBtn.disabled = !confirmCheckbox.checked;
-    });
-
-    // 모달 취소 버튼
-    cancelConfirmBtn.addEventListener('click', closeConfirmModal);
-
-    // 모달 확인 버튼 (API 호출)
-    confirmDealBtn.addEventListener('click', async () => {
-        if (!selectedDealId || !confirmCheckbox.checked) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/seller/deals/${selectedDealId}/confirm`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Accept': 'application/json'
-                }
+    /** 초기 탭 클릭 이벤트 바인딩 */
+    function bindTabClickEvents() {
+        const tabButtons = document.querySelectorAll('.seller-deal-tab-btn');
+        tabButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                if (!tab || tab === currentTab) return;
+                switchTab(tab);
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '판매자 확정에 실패했습니다.');
-            }
-
-            // 성공 시
-            closeConfirmModal();
-            showSuccess('판매자 확정이 완료되었습니다.');
-            
-            // 1.5초 후 페이지 새로고침
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-
-        } catch (error) {
-            console.error('판매자 확정 API 호출 실패:', error);
-            showError(error.message);
-        }
-    });
-
-    // 성공 메시지 표시
-    function showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successDiv.textContent = message;
-        document.body.appendChild(successDiv);
-
-        setTimeout(() => {
-            successDiv.remove();
-        }, 3000);
+        });
     }
 
-    // 페이지 로드 시 데이터 로드
-    console.log('=== seller-deals.js 로드됨 ===');
+    /** 초기 데이터 로드 */
+    async function init() {
+        try {
+            const data = await fetchJson(API_URL);
+            allDeals = data.deals ?? [];
+
+            updateTabCounts();
+            bindTabClickEvents();
+            bindDetailButtonHandler();
+            switchTab('all');
+        } catch (error) {
+            console.error(error);
+            alert(error.message || '판매자 거래 정보를 불러오는데 실패했습니다.');
+        }
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadDeals);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        loadDeals();
+        init();
     }
 })();
