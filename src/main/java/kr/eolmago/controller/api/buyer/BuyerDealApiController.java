@@ -47,6 +47,17 @@ public class BuyerDealApiController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "구매자 거래 확정")
+    @PostMapping("/{dealId}/confirm")
+    public ResponseEntity<Void> confirmDeal(
+            @PathVariable Long dealId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        buyerDealService.confirmDeal(dealId, userDetails.getUserId());
+        return ResponseEntity.ok().build();
+    }
+
+
     @Operation(summary = "구매자 거래 상세 조회 (상세 페이지용)")
     @GetMapping("/{dealId}")
     public ResponseEntity<BuyerDealDetailResponse> getDealDetail(
@@ -56,16 +67,5 @@ public class BuyerDealApiController {
         UUID buyerId = userDetails.getUserId();
         BuyerDealDetailResponse response = buyerDealDetailService.getDealDetail(dealId, buyerId);
         return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "구매자 확정")
-    @PostMapping("/{dealId}/confirm")
-    public ResponseEntity<Void> confirmByBuyer(
-            @PathVariable Long dealId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        UUID buyerId = userDetails.getUserId();
-        buyerDealDetailService.confirmByBuyer(dealId, buyerId);
-        return ResponseEntity.ok().build();
     }
 }
