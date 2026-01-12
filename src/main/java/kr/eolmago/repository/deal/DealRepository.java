@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface DealRepository extends JpaRepository<Deal, Long> {
+public interface DealRepository extends JpaRepository<Deal, Long>, DealRepositoryCustom {
     
     /**
      * 상태별 거래 목록
@@ -33,6 +33,17 @@ public interface DealRepository extends JpaRepository<Deal, Long> {
      * 만료된 거래 목록
      */
     List<Deal> findByStatusAndConfirmByAtBefore(DealStatus status, OffsetDateTime now);
+
+    /**
+     * 자동 완료 대상 거래 목록 조회
+     *
+     * CONFIRMED 상태이면서, 배송 시작 후 일정 기간이 지난 거래 조회
+     *
+     * @param status 거래 상태 (CONFIRMED)
+     * @param threshold 기준 시간 (shippedAt이 이 시간보다 이전인 거래)
+     * @return 자동 완료 대상 거래 목록
+     */
+    List<Deal> findByStatusAndShippedAtBefore(DealStatus status, OffsetDateTime threshold);
 
     /**
      * 특정 경매로 생성된 거래 존재 여부 확인

@@ -1,7 +1,9 @@
 package kr.eolmago.controller.view.seller;
 
-import org.springframework.beans.factory.annotation.Value;
 import kr.eolmago.global.security.CustomUserDetails;
+import kr.eolmago.service.deal.SellerDealService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,7 +15,10 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping("/seller")
+@RequiredArgsConstructor
 public class SellerViewController {
+
+    private final SellerDealService sellerDealService;
 
     @Value("${supabase.url:}")
     private String supabaseUrl;
@@ -70,11 +75,18 @@ public class SellerViewController {
         return "pages/seller/seller-deals";
     }
 
-    // 판매 거래 상세 페이지
+    // 판매 거래 상세 페이지 (통합 페이지 사용)
     @GetMapping("/deals/{dealId}")
-    public String sellerDealDetail(@PathVariable Long dealId, Model model) {
+    public String sellerDealDetail(@PathVariable Long dealId,
+                                    @AuthenticationPrincipal CustomUserDetails userDetails,
+                                    Model model) {
+        UUID sellerId = userDetails.getUserId();
+        var deal = sellerDealService.getDealDetail(dealId, sellerId);
+
         model.addAttribute("dealId", dealId);
-        return "pages/seller/seller-deal-detail";
+        model.addAttribute("role", "SELLER");
+        model.addAttribute("deal", deal);
+        return "pages/deal/deal-detail";
     }
 
 //    // 유찰된 경매 상세 페이지 (예전 주석 예시)
