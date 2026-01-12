@@ -189,6 +189,10 @@
         confirmCheckbox.checked = false;
         confirmDealBtn.disabled = true;
         modal.classList.remove('hidden');
+        
+    // 전역 함수: 거래 상세보기
+    window.viewDealDetail = function(dealId) {
+        window.location.href = `/buyer/deals/${dealId}`;
     };
 
     function closeConfirmModal() {
