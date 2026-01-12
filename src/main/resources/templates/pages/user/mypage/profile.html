@@ -17,17 +17,19 @@
         </div>
 
         <!-- 로딩 스피너 -->
-        <div id="loadingSpinner" class="flex items-center justify-center py-12">
+        <div id="loadingSpinner" class="flex items-center justify-center py-12" th:classappend="${profile != null} ? 'hidden'">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
         </div>
 
         <!-- 프로필 카드 -->
-        <div id="profileCard" class="hidden rounded-2xl border border-gray-200 bg-white shadow-sm p-8 space-y-6">
+        <div id="profileCard" class="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 space-y-6"
+             th:classappend="${profile == null} ? 'hidden'">
             <!-- 프로필 헤더 -->
             <div class="flex items-center gap-6 pb-6 border-b border-gray-100">
                 <!-- 프로필 이미지 -->
                 <div class="relative h-20 w-20 rounded-full overflow-hidden bg-slate-200 group cursor-pointer" onclick="document.getElementById('profileImageInput').click()">
                     <img id="profileImage"
+                         th:src="${profile != null && profile.profileImageUrl != null ? profile.profileImageUrl : '/images/profile/base.png'}"
                          src="/images/profile/base.png"
                          alt="프로필 이미지"
                          class="h-full w-full object-cover" />
@@ -42,7 +44,7 @@
 
                 <div class="flex-1">
                     <p class="text-sm text-gray-600">닉네임</p>
-                    <h2 class="text-2xl font-bold text-gray-900" id="profileNickname">닉네임</h2>
+                    <h2 class="text-2xl font-bold text-gray-900" id="profileNickname" th:text="${profile != null ? profile.nickname : '닉네임'}">닉네임</h2>
                 </div>
             </div>
 
@@ -50,24 +52,26 @@
             <div class="grid grid-cols-3 gap-4">
                 <div class="rounded-lg bg-slate-50 p-4 text-center">
                     <p class="text-sm text-gray-600">거래 횟수</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2" id="tradeCount">0</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="tradeCount" th:text="${profile != null ? profile.tradeCount : '0'}">0</p>
                 </div>
                 <div class="rounded-lg bg-slate-50 p-4 text-center">
                     <p class="text-sm text-gray-600">별점</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2" id="ratingAvg">0.00</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="ratingAvg" th:text="${profile != null ? #numbers.formatDecimal(profile.ratingAvg, 1, 2) : '0.00'}">0.00</p>
                 </div>
                 <div class="rounded-lg bg-slate-50 p-4 text-center">
                     <p class="text-sm text-gray-600">신고 횟수</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-2" id="reportCount">0</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="reportCount" th:text="${profile != null ? profile.reportCount : '0'}">0</p>
                 </div>
             </div>
         </div>
 
         <!-- 프로필 수정 폼 -->
-        <form id="profileForm" class="hidden rounded-2xl border border-gray-200 bg-white shadow-sm p-8 space-y-6">
+        <form id="profileForm" class="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 space-y-6"
+              th:classappend="${profile == null} ? 'hidden'">
             <div class="space-y-2">
                 <label for="name" class="block text-sm font-semibold text-gray-900">이름</label>
                 <input type="text" id="name" name="name" placeholder="이름을 입력하세요"
+                       th:value="${profile != null ? profile.name : ''}"
                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder:text-gray-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
                 <span class="text-xs text-red-600 hidden" id="nameError"></span>
             </div>
@@ -76,6 +80,7 @@
                 <label for="nickname" class="block text-sm font-semibold text-gray-900">닉네임</label>
                 <div class="flex gap-3">
                     <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요"
+                           th:value="${profile != null ? profile.nickname : ''}"
                            class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder:text-gray-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
                     <button type="button" id="checkNicknameBtn"
                             class="rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition">
@@ -89,13 +94,20 @@
             <div class="space-y-2">
                 <div class="flex items-center gap-2">
                     <label for="phoneNumber" class="block text-sm font-semibold text-gray-900">휴대폰 번호</label>
-                    <span id="phoneAuthStatus" class="text-xs font-medium"></span>
+                    <span id="phoneAuthStatus" class="text-xs font-medium"
+                          th:text="${profile != null && profile.phoneVerified ? '인증 완료' : '미인증'}"
+                          th:classappend="${profile != null && profile.phoneVerified ? 'text-green-600' : 'text-red-600'}"></span>
                 </div>
                 <div class="flex gap-3">
                     <input type="text" id="phoneNumber" name="phoneNumber" placeholder="01012345678"
+                           th:value="${profile != null ? profile.phoneNumber : ''}"
+                           th:readonly="${profile != null && profile.phoneVerified}"
+                           th:classappend="${profile != null && profile.phoneVerified ? 'bg-gray-100 cursor-not-allowed' : ''}"
                            class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder:text-gray-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
                     <button type="button" id="sendVerificationBtn"
-                            class="rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition">
+                            th:disabled="${profile != null && profile.phoneVerified}"
+                            th:classappend="${profile != null && profile.phoneVerified ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400' : 'bg-slate-900 hover:bg-slate-800'}"
+                            class="rounded-lg px-4 py-3 text-sm font-semibold text-white transition">
                         인증 코드 발송
                     </button>
                 </div>
@@ -136,8 +148,11 @@
 
 <!-- 스크립트를 별도 fragment로 분리 -->
 <th:block layout:fragment="scripts">
-    <script>
-        let currentProfile = null;
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        let currentProfile = /*[[${profile}]]*/ null;
+        /*]]>*/
+
         let timerInterval; // 타이머 인터벌 변수
         let selectedImageFile = null; // 선택된 이미지 파일
 
@@ -215,6 +230,11 @@
         }
 
         async function loadProfile() {
+            // 이미 SSR로 데이터가 로드된 경우 API 호출 스킵
+            if (currentProfile) {
+                return;
+            }
+
             const loadingSpinner = document.getElementById('loadingSpinner');
             const profileCard = document.getElementById('profileCard');
             const profileForm = document.getElementById('profileForm');
