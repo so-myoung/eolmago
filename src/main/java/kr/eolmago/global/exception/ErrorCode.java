@@ -75,9 +75,15 @@ public enum ErrorCode {
     DEAL_UNAUTHORIZED(HttpStatus.FORBIDDEN, "D002", "해당 거래에 접근 권한이 없습니다."),
     DEAL_ALREADY_EXISTS(HttpStatus.CONFLICT, "D003", "이미 해당 경매로 거래가 생성되었습니다."),
     AUCTION_ID_MISMATCH(HttpStatus.BAD_REQUEST, "D004", "경매 ID가 일치하지 않습니다."),
-    DEAL_ALREADY_CONFIRMED(HttpStatus.BAD_REQUEST, "D005", "이미 확정된 거래입니다.");
+    DEAL_ALREADY_CONFIRMED(HttpStatus.BAD_REQUEST, "D005", "이미 확정된 거래입니다."),
+    DEAL_PDF_ONLY_COMPLETED(HttpStatus.BAD_REQUEST, "D006", "완료된 거래만 PDF를 생성할 수 있습니다."),
+    DEAL_INVALID_STATUS(HttpStatus.BAD_REQUEST, "D007", "거래 상태가 올바르지 않습니다."),
+    DEAL_PDF_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "D008", "현재 거래 상태에서는 PDF를 다운로드할 수 없습니다."),
 
-
+    // Favorite
+    FAVORITE_SELF_AUCTION_FORBIDDEN(HttpStatus.FORBIDDEN, "F001", "본인 경매는 찜할 수 없습니다."),
+    FAVORITE_ALREADY_EXISTS(HttpStatus.CONFLICT, "F002", "이미 찜한 경매입니다."),
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "F003", "찜 정보를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

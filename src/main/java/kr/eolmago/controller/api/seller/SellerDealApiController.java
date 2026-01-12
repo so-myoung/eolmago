@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.eolmago.dto.api.deal.response.SellerDealDetailResponse;
 import kr.eolmago.dto.api.deal.response.SellerDealListResponse;
 import kr.eolmago.global.security.CustomUserDetails;
-import kr.eolmago.service.deal.SellerDealDetailService;
+import kr.eolmago.service.deal.DealPdfService;
 import kr.eolmago.service.deal.SellerDealService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ import java.util.UUID;
 public class SellerDealApiController {
 
     private final SellerDealService sellerDealService;
-    private final SellerDealDetailService sellerDealDetailService;
+    private final DealPdfService dealPdfService;
 
     @Operation(summary = "판매자 거래 목록 조회")
     @GetMapping
@@ -43,7 +45,7 @@ public class SellerDealApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID sellerId = userDetails.getUserId();
-        SellerDealListResponse.DealDto response = sellerDealService.getDealDetail(dealId, sellerId);
+        SellerDealListResponse.DealDto response = sellerDealService.getDealListDetail(dealId, sellerId);
         return ResponseEntity.ok(response);
     }
 
@@ -64,7 +66,25 @@ public class SellerDealApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID sellerId = userDetails.getUserId();
-        SellerDealDetailResponse response = sellerDealDetailService.getDealDetail(dealId, sellerId);
+        SellerDealDetailResponse response = sellerDealService.getDealDetail(dealId, sellerId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "판매자 거래확정서 PDF 다운로드", description = "확정 이후(CONFIRMED, COMPLETED) 거래의 거래확정서를 PDF로 다운로드합니다")
+    @GetMapping("/{dealId}/pdf")
+    public ResponseEntity<byte[]> downloadPdf(
+            @PathVariable Long dealId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        byte[] pdfBytes = dealPdfService.generatePdfForSeller(dealId, userDetails.getUserId());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "deal-confirmation-" + dealId + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
     }
 }

@@ -2,6 +2,8 @@ package kr.eolmago.service.deal;
 
 import kr.eolmago.domain.entity.auction.AuctionImage;
 import kr.eolmago.domain.entity.deal.Deal;
+import kr.eolmago.dto.api.deal.response.DealDetailDto;
+import kr.eolmago.dto.api.deal.response.SellerDealDetailResponse;
 import kr.eolmago.dto.api.deal.response.SellerDealListResponse;
 import kr.eolmago.global.exception.BusinessException;
 import kr.eolmago.global.exception.ErrorCode;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 판매자 거래 조회/처리 서비스
+ * 판매자 거래 목록 조회 / 상세 / 확정 서비스
  */
 @Service
 @RequiredArgsConstructor
@@ -45,7 +47,7 @@ public class SellerDealService {
     /**
      * 판매자의 특정 거래 상세 조회 (권한 검증)
      */
-    public SellerDealListResponse.DealDto getDealDetail(Long dealId, UUID sellerId) {
+    public SellerDealListResponse.DealDto getDealListDetail(Long dealId, UUID sellerId) {
         Deal deal = dealRepository.findById(dealId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEAL_NOT_FOUND));
 
@@ -55,6 +57,21 @@ public class SellerDealService {
         }
 
         return toDealDto(deal);
+    }
+
+    /**
+     * 판매자의 특정 거래 상세 조회 (권한 검증)
+     */
+    public SellerDealDetailResponse getDealDetail(Long dealId, UUID sellerId) {
+        DealDetailDto dealDetail = dealRepository.findDetailById(dealId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEAL_NOT_FOUND));
+
+        // 권한 검증: 내가 판매자인 거래인지 확인
+        if (!dealDetail.sellerId().equals(sellerId)) {
+            throw new BusinessException(ErrorCode.DEAL_UNAUTHORIZED);
+        }
+
+        return SellerDealDetailResponse.from(dealDetail);
     }
 
     /**

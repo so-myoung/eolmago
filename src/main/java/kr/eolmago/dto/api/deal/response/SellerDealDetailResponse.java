@@ -42,9 +42,48 @@ public record SellerDealDetailResponse(
         @Schema(description = "거래 완료 시간")
         String completedAt,
 
-        @Schema(description = "구매자 ID")
-        UUID buyerId,
+        UUID auctionId,
+        String auctionTitle,
 
-        @Schema(description = "구매자 닉네임")
-        String buyerNickname
-) {}
+        String itemName,
+        String itemCategory,
+        String itemCondition,
+        String itemBrand,
+        String itemStorage,
+
+        UUID buyerId,
+        String buyerNickname,
+
+        @Schema(description = "이미지 URL 리스트")
+        java.util.List<String> imageUrls
+) {
+        /**
+         * DealDetailDto로부터 SellerDealDetailResponse 생성
+         */
+        public static SellerDealDetailResponse from(DealDetailDto dto) {
+                return new SellerDealDetailResponse(
+                        dto.dealId(),
+                        dto.finalPrice(),
+                        dto.status(),
+                        dto.createdAt(),
+                        dto.sellerConfirmed(),
+                        dto.buyerConfirmed(),
+                        dto.sellerConfirmedAt(),
+                        dto.buyerConfirmedAt(),
+                        dto.confirmedAt(),
+                        dto.confirmByAt(),
+                        dto.shipByAt(),
+                        dto.completedAt(),
+                        dto.auctionId(),
+                        dto.auctionTitle(),
+                        dto.itemName(),
+                        dto.getItemCategory(),    // 한글 카테고리명
+                        dto.getItemCondition(),   // 상품 상태 (S급 등)
+                        dto.getItemBrand(),       // specs에서 추출
+                        dto.getItemStorage(),     // specs에서 추출
+                        dto.buyerId(),
+                        dto.buyerNickname(),
+                        dto.imageUrls()
+                );
+        }
+}

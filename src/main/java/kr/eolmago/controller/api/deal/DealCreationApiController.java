@@ -6,8 +6,11 @@ import jakarta.validation.Valid;
 import kr.eolmago.dto.api.deal.request.CreateDealFromAuctionRequest;
 import kr.eolmago.dto.api.deal.response.DealCreationResponse;
 import kr.eolmago.service.deal.DealCreationService;
+import kr.eolmago.service.deal.DealPdfService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +26,7 @@ import java.util.UUID;
 public class DealCreationApiController {
 
     private final DealCreationService dealCreationService;
+    private final DealPdfService pdfService;
 
     @Operation(
             summary = "경매 종료 후 거래 생성",
@@ -59,5 +63,27 @@ public class DealCreationApiController {
     ) {
         boolean exists = dealCreationService.isDealExistsForAuction(auctionId);
         return ResponseEntity.ok(exists);
+    }
+
+    // ========================================
+    // PDF 다운로드
+    // ========================================
+
+    /**
+     * 거래확정서 PDF 다운로드
+     */
+    @Operation(summary = "거래확정서 PDF 다운로드", description = "완료된 거래의 거래확정서를 PDF로 다운로드합니다")
+    @GetMapping("/{dealId}/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long dealId) {
+        byte[] pdfBytes = pdfService.generateDealConfirmationPdf(dealId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "deal-confirmation-" + dealId + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
     }
 }

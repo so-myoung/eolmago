@@ -2,7 +2,9 @@ package kr.eolmago.service.deal;
 
 import kr.eolmago.domain.entity.auction.AuctionImage;
 import kr.eolmago.domain.entity.deal.Deal;
+import kr.eolmago.dto.api.deal.response.BuyerDealDetailResponse;
 import kr.eolmago.dto.api.deal.response.BuyerDealListResponse;
+import kr.eolmago.dto.api.deal.response.DealDetailDto;
 import kr.eolmago.global.exception.BusinessException;
 import kr.eolmago.global.exception.ErrorCode;
 import kr.eolmago.repository.auction.AuctionImageRepository;
@@ -15,7 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 구매자 거래 조회/처리 서비스
+ * 구매자 거래 목록 조회 / 상세 / 확정 서비스
+ *
  */
 @Service
 @RequiredArgsConstructor
@@ -45,7 +48,7 @@ public class BuyerDealService {
     /**
      * 구매자의 특정 거래 상세 조회 (권한 검증)
      */
-    public BuyerDealListResponse.DealDto getDealDetail(Long dealId, UUID buyerId) {
+    public BuyerDealListResponse.DealDto getDealListDetail(Long dealId, UUID buyerId) {
         Deal deal = dealRepository.findById(dealId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEAL_NOT_FOUND));
 
@@ -55,6 +58,21 @@ public class BuyerDealService {
         }
 
         return toDealDto(deal);
+    }
+
+    /**
+     * 구매자의 특정 거래 상세 조회
+     */
+    public BuyerDealDetailResponse getDealDetail(Long dealId, UUID buyerId) {
+        DealDetailDto dealDetail = dealRepository.findDetailById(dealId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEAL_NOT_FOUND));
+
+        // 권한 검증: 내가 구매자인 거래인지 확인
+        if (!dealDetail.buyerId().equals(buyerId)) {
+            throw new BusinessException(ErrorCode.DEAL_UNAUTHORIZED);
+        }
+
+        return BuyerDealDetailResponse.from(dealDetail);
     }
 
     /**
@@ -74,6 +92,29 @@ public class BuyerDealService {
 
         // 도메인 로직 위임 (둘 다 확인되면 CONFIRMED 로 전환)
         deal.confirmByBuyer();
+    }
+
+    /**
+     * 구매자 수령 확인 → 거래 완료(COMPLETED) 처리
+     *
+     */
+    @Transactional
+    public void receiveConfirm(Long dealId, UUID buyerId) {
+        Deal deal = dealRepository.findById(dealId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEAL_NOT_FOUND));
+
+        // 권한 검증: 내가 구매자인 거래인지 확인
+        if (!deal.getBuyer().getUserId().equals(buyerId)) {
+            throw new BusinessException(ErrorCode.DEAL_UNAUTHORIZED);
+        }
+
+        // 상태 검증: CONFIRMED 상태여야 함 (배송이 시작된 상태)
+        if (!deal.canComplete()) {
+            throw new BusinessException(ErrorCode.DEAL_INVALID_STATUS);
+        }
+
+        // 거래 완료 처리
+        deal.complete();
     }
 
     /**
