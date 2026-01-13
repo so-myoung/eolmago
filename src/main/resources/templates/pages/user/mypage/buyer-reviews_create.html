@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/base}">
 <head>
-    <title layout:fragment="title">구매 후기 작성</title>
+    <title layout:fragment="title">구매 리뷰 작성</title>
 </head>
 
 <body>
@@ -11,9 +11,9 @@
     <div class="max-w-3xl mx-auto space-y-8">
         <!-- 헤더 -->
         <div>
-            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">구매 후기 작성</h1>
+            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">구매 리뷰 작성</h1>
             <p class="mt-2 text-sm text-gray-600">
-                완료된 거래에 대해 판매자에게 남길 후기를 작성해주세요.
+                완료된 거래에 대해 판매자에게 남길 리뷰를 작성해주세요.
             </p>
         </div>
 
@@ -37,8 +37,8 @@
 
             <!-- 내용 -->
             <div>
-                <label for="content-input" class="block text-sm font-medium text-gray-700">후기 내용</label>
-                <p class="mt-1 text-xs text-gray-500">상대방에게 도움이 되는 솔직한 후기를 남겨주세요. (최대 1000자)</p>
+                <label for="content-input" class="block text-sm font-medium text-gray-700">리뷰 내용</label>
+                <p class="mt-1 text-xs text-gray-500">상대방에게 도움이 되는 솔직한 리뷰를 남겨주세요. (최대 1000자)</p>
                 <div class="mt-2">
                     <textarea id="content-input"
                               rows="6"
@@ -61,7 +61,7 @@
                 <button type="button"
                         id="submit-btn"
                         class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                    후기 등록
+                    리뷰 등록
                 </button>
             </div>
         </div>
