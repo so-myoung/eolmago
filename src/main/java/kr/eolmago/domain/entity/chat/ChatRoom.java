@@ -20,7 +20,7 @@ public class ChatRoom extends AuditableEntity {
     private Long chatRoomId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "auction_id", nullable = false)
+    @JoinColumn(name = "auction_id")
     private Auction auction;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
