@@ -103,11 +103,11 @@
 
         if (content.length === 0) {
             contentError.classList.remove("hidden");
-            contentError.textContent = "후기 내용을 입력해주세요.";
+            contentError.textContent = "리뷰 내용을 입력해주세요.";
             valid = false;
         } else if (content.length > 1000) {
             contentError.classList.remove("hidden");
-            contentError.textContent = "후기 내용은 최대 1000자까지 입력할 수 있습니다.";
+            contentError.textContent = "리뷰 내용은 최대 1000자까지 입력할 수 있습니다.";
             valid = false;
         }
 
@@ -132,12 +132,11 @@
                 content
             });
 
-            alert("후기가 등록되었습니다.");
-            // 완료 후: 내가 작성한 후기 목록으로 이동 (필요에 따라 경로 수정 가능)
+            alert("리뷰가 등록되었습니다.");
             window.location.href = "/mypage/buyer-reviews";
         } catch (e) {
             console.error("[buyer-review_create] failed to submit review", e);
-            alert("후기 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            alert("리뷰 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             submitBtn.disabled = false;
         }
