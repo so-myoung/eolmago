@@ -25,4 +25,14 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
         order by r.updatedAt desc
     """)
 	List<ChatRoom> findMyRoomsByType(@Param("userId") UUID userId, @Param("roomType") ChatRoomType roomType);
+
+	@Query("""
+		select r
+		from ChatRoom r
+		join fetch r.seller s
+		join fetch r.buyer b
+		left join fetch r.auction a
+		where r.chatRoomId = :roomId
+	""")
+	Optional<ChatRoom> findRoomViewById(@Param("roomId") Long roomId);
 }
