@@ -20,7 +20,6 @@ public class NotificationPublisher {
 	private final NotificationRepository notificationRepository;
 	private final UserRepository userRepository;
 	private final NotificationSseHub sseRegistry;
-
 	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
@@ -43,9 +42,13 @@ public class NotificationPublisher {
 
 		sseRegistry.push(userId, NotificationResponse.from(saved));
 
-		eventPublisher.publishEvent(new NotificationCreatedEvent(
-			userId, cmd.title(), cmd.body(), cmd.linkUrl()
-		));
+		eventPublisher.publishEvent(
+			new NotificationCreatedEvent(
+				userId,
+				cmd.title(),
+				cmd.body()
+			)
+		);
 
 		return saved.getNotificationId();
 	}

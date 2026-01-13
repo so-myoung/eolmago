@@ -5,13 +5,9 @@ import java.util.UUID;
 public record NotificationCreatedEvent(
 	UUID userId,
 	String title,
-	String body,
-	String linkUrl
+	String body
 ) {
 	public String toChatContent() {
-		if (linkUrl == null || linkUrl.isBlank()) {
-			return title + "\n" + body;
-		}
-		return title + "\n" + body + "\n" + linkUrl;
+		return title + "\n" + body;
 	}
 }
