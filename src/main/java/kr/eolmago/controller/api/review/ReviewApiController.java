@@ -2,17 +2,16 @@ package kr.eolmago.controller.api.review;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import kr.eolmago.dto.api.review.request.ReviewCreateRequest;
-import kr.eolmago.dto.view.review.ReviewResponse;
 import kr.eolmago.global.security.CustomUserDetails;
 import kr.eolmago.service.review.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "리뷰 API", description = "거래 리뷰 관련 API")
@@ -23,42 +22,42 @@ public class ReviewApiController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "구매자가 리뷰 작성", description = "거래가 완료된 후, 구매자가 판매자에 대한 리뷰를 작성합니다.")
-    @PostMapping("/deals/{dealId}")
-    public ResponseEntity<ReviewResponse> createBuyerReview(
-            @PathVariable Long dealId,
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody ReviewCreateRequest request
-    ) {
-        UUID buyerId = userDetails.getUserId();
-        ReviewCreateRequest fixed = new ReviewCreateRequest(dealId, request.rating(), request.content());
-
-        ReviewResponse response = reviewService.createBuyerReview(buyerId, fixed);
-
-        return ResponseEntity
-                .created(URI.create("/api/reviews/" + response.reviewId()))
-                .body(response);
-    }
-
-    @Operation(summary = "내가 작성한 리뷰 목록 조회 (구매자 기준)")
-    @GetMapping("/me/buyer")
-    public ResponseEntity<List<ReviewResponse>> getMyBuyerReviews(
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        UUID buyerId = userDetails.getUserId();
-        List<ReviewResponse> responses = reviewService.getBuyerReviews(buyerId);
-        return ResponseEntity.ok(responses);
-    }
-
-    @Operation(summary = "내가 받은 리뷰 목록 조회 (판매자 기준)")
-    @GetMapping("/me/seller")
-    public ResponseEntity<List<ReviewResponse>> getMySellerReviews(
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        UUID sellerId = userDetails.getUserId();
-        List<ReviewResponse> responses = reviewService.getSellerReviews(sellerId);
-        return ResponseEntity.ok(responses);
-    }
+//    @Operation(summary = "구매자가 리뷰 작성", description = "거래가 완료된 후, 구매자가 판매자에 대한 리뷰를 작성합니다.")
+//    @PostMapping("/deals/{dealId}")
+//    public ResponseEntity<ReviewResponse> createBuyerReview(
+//            @PathVariable Long dealId,
+//            @AuthenticationPrincipal CustomUserDetails userDetails,
+//            @RequestBody ReviewCreateRequest request
+//    ) {
+//        UUID buyerId = userDetails.getUserId();
+//        ReviewCreateRequest fixed = new ReviewCreateRequest(dealId, request.rating(), request.content());
+//
+//        ReviewResponse response = reviewService.createBuyerReview(buyerId, fixed);
+//
+//        return ResponseEntity
+//                .created(URI.create("/api/reviews/" + response.reviewId()))
+//                .body(response);
+//    }
+//
+//    @Operation(summary = "내가 작성한 리뷰 목록 조회 (구매자 기준)")
+//    @GetMapping("/me/buyer")
+//    public ResponseEntity<List<ReviewResponse>> getMyBuyerReviews(
+//            @AuthenticationPrincipal CustomUserDetails userDetails
+//    ) {
+//        UUID buyerId = userDetails.getUserId();
+//        List<ReviewResponse> responses = reviewService.getBuyerReviews(buyerId);
+//        return ResponseEntity.ok(responses);
+//    }
+//
+//    @Operation(summary = "내가 받은 리뷰 목록 조회 (판매자 기준)")
+//    @GetMapping("/me/seller")
+//    public ResponseEntity<List<ReviewResponse>> getMySellerReviews(
+//            @AuthenticationPrincipal CustomUserDetails userDetails
+//    ) {
+//        UUID sellerId = userDetails.getUserId();
+//        List<ReviewResponse> responses = reviewService.getSellerReviews(sellerId);
+//        return ResponseEntity.ok(responses);
+//    }
 
     @Operation(summary = "리뷰 삭제", description = "리뷰 작성자(구매자) 또는 판매자만 삭제할 수 있습니다.")
     @DeleteMapping("/{reviewId}")
