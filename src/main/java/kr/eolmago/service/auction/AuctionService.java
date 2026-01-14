@@ -211,9 +211,7 @@ public class AuctionService {
 
         eventPublisher.publishEvent(new AuctionEndAtChangedEvent(auction.getAuctionId(), endAt));
 
-        notificationPublisher.publish(
-            NotificationPublishCommand.auctionPublished(sellerId, auction.getAuctionId())
-        );
+        notificationPublisher.publish(NotificationPublishCommand.auctionPublished(sellerId, auction.getAuctionId()));
 
         return new AuctionDraftResponse(sellerId, auction.getAuctionId(), auction.getStatus());
     }
