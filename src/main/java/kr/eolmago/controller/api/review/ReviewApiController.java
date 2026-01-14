@@ -23,7 +23,8 @@ public class ReviewApiController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "구매자가 리뷰 작성", description = "거래가 완료된 후, 구매자가 판매자에 대한 리뷰를 작성합니다.")
+    @Operation(summary = "구매자가 리뷰 작성",
+            description = "거래가 완료된 후, 구매자가 판매자에 대한 리뷰를 작성합니다.")
     @PostMapping("/deals/{dealId}")
     public ResponseEntity<ReviewResponse> createBuyerReview(
             @PathVariable Long dealId,
@@ -31,9 +32,8 @@ public class ReviewApiController {
             @RequestBody ReviewCreateRequest request
     ) {
         UUID buyerId = userDetails.getUserId();
-        ReviewCreateRequest fixed = new ReviewCreateRequest(dealId, request.rating(), request.content());
 
-        ReviewResponse response = reviewService.createBuyerReview(buyerId, fixed);
+        ReviewResponse response = reviewService.createReview(dealId, buyerId, request);
 
         return ResponseEntity
                 .created(URI.create("/api/reviews/" + response.reviewId()))
@@ -46,7 +46,8 @@ public class ReviewApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID buyerId = userDetails.getUserId();
-        List<ReviewResponse> responses = reviewService.getBuyerReviews(buyerId);
+
+        List<ReviewResponse> responses = reviewService.getReviewsByBuyer(buyerId);
         return ResponseEntity.ok(responses);
     }
 
@@ -56,7 +57,8 @@ public class ReviewApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID sellerId = userDetails.getUserId();
-        List<ReviewResponse> responses = reviewService.getSellerReviews(sellerId);
+
+        List<ReviewResponse> responses = reviewService.getReviewsBySeller(sellerId);
         return ResponseEntity.ok(responses);
     }
 
