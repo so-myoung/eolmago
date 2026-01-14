@@ -21,11 +21,11 @@ public class DealScheduler {
 
     /**
      * 거래 확정 기한 만료 체크 스케줄러
-     * 1분마다 실행되어 confirmByAt이 지난 PENDING_CONFIRMATION 상태의 거래를 TERMINATED로 변경
+     * 1분마다 실행되어 confirmByAt이 지난 PENDING_CONFIRMATION 상태의 거래를 EXPIRED로 변경
      */
     @Scheduled(fixedDelay = 60000) // 1분마다 실행
     @Transactional
-    public void terminateExpiredDeals() {
+    public void expireDeals() {
         OffsetDateTime now = OffsetDateTime.now();
         
         // PENDING_CONFIRMATION 상태이면서 confirmByAt이 현재 시간보다 이전인 거래 조회
@@ -42,10 +42,10 @@ public class DealScheduler {
 
         for (Deal deal : expiredDeals) {
             try {
-                deal.terminate("거래 확정 기한 만료로 인한 자동 종료");
-                log.info("거래 ID: {} 자동 종료 처리 완료", deal.getDealId());
+                deal.expire();
+                log.info("거래 ID: {} 만료 처리 완료", deal.getDealId());
             } catch (Exception e) {
-                log.error("거래 ID: {} 자동 종료 처리 중 오류 발생", deal.getDealId(), e);
+                log.error("거래 ID: {} 만료 처리 중 오류 발생", deal.getDealId(), e);
             }
         }
         
