@@ -3,7 +3,6 @@ package kr.eolmago.service.auction;
 import kr.eolmago.domain.entity.auction.Auction;
 import kr.eolmago.domain.entity.auction.AuctionImage;
 import kr.eolmago.domain.entity.auction.AuctionItem;
-import kr.eolmago.domain.entity.auction.Bid;
 import kr.eolmago.domain.entity.auction.enums.AuctionStatus;
 import kr.eolmago.domain.entity.auction.enums.ItemCategory;
 import kr.eolmago.domain.entity.auction.enums.ItemCondition;
