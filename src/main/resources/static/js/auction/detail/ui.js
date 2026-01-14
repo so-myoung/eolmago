@@ -139,10 +139,6 @@ export class Ui {
         this._closingLock = false;
     }
 
-    /* -----------------------------
-     * Common UI helpers
-     * ----------------------------- */
-
     setLoading(isLoading) {
         if (!this.loadingOverlay) return;
         this.loadingOverlay.classList.toggle("hidden", !isLoading);
@@ -168,13 +164,11 @@ export class Ui {
     forceReloadWithToast(message, title = "오류") {
         this.setToast(title, message);
 
-        // 토스트 읽는 시간(원하시면 1500~2000ms로 더 늘리셔도 됩니다)
         const READ_DELAY_MS = 1500;
 
         const url = window.location.href;
         const busted = url + (url.includes("?") ? "&" : "?") + "r=" + Date.now();
 
-        // 1) replace로 강제 이동(캐시 무력화)
         setTimeout(() => {
             try {
                 window.location.replace(busted);
@@ -183,7 +177,6 @@ export class Ui {
             }
         }, READ_DELAY_MS);
 
-        // 2) replace가 막히는 환경 대비 fallback reload
         setTimeout(() => {
             try {
                 window.location.reload();
@@ -192,10 +185,6 @@ export class Ui {
             }
         }, READ_DELAY_MS + 1200);
     }
-
-    /* -----------------------------
-     * Render
-     * ----------------------------- */
 
     renderAll(data, serverNowMs, api) {
         this.data = data;
@@ -207,16 +196,11 @@ export class Ui {
         this.renderDetail(data);
         this.renderSeller(data);
 
-        // 상태별 UI (유찰 포함) 먼저 반영
         this.applyAuctionStateUi(data);
 
-        // countdown
         this.startAccurateCountdown(data, serverNowMs, api);
 
-        // bid defaults (유찰이면 숨김이므로 내부에서 방어)
         this.prepareBidDefaults(data);
-
-        // highest UI (LIVE가 아니거나 유찰이면 내부에서 숨김 처리)
         this.applyHighestUi(data);
 
         if (this.sellerCard && !this.sellerCard.dataset.bound) {
@@ -415,10 +399,6 @@ export class Ui {
         if (this.sellerTradeCount) this.sellerTradeCount.textContent = String(data?.sellerTradeCount ?? 0);
     }
 
-    /* -----------------------------
-     * Countdown & Close
-     * ----------------------------- */
-
     startAccurateCountdown(data, serverNowMs, api) {
         if (!this.remainingTime) return;
 
@@ -440,7 +420,6 @@ export class Ui {
                 this.remainingTime.textContent = formatRemainingHms(diffMs);
             },
             onDone: () => {
-                // 0초 도달 시 서버 마감 확정 후 최신 상태 반영
                 this.handleCountdownDone(api);
             }
         });
@@ -450,7 +429,6 @@ export class Ui {
         const d = this.data ?? {};
         if (!this.remainingTime) return;
 
-        // 즉시 UI 표시(이후 서버 확정으로 갱신)
         this.remainingTime.textContent = "경매 종료";
 
         if (!api || this._closingLock) {
@@ -461,10 +439,8 @@ export class Ui {
 
         this._closingLock = true;
         try {
-            // 서버 마감 호출(멱등)
             await api.closeAuction(d.auctionId);
 
-            // 최신 상태 재조회
             const { data: fresh, serverNowMs } = await api.fetchDetailWithServerTime(d.auctionId);
 
             if (fresh && (fresh.bidIncrement === null || fresh.bidIncrement === undefined)) {
@@ -473,20 +449,17 @@ export class Ui {
 
             this.data = fresh;
 
-            // 주요 영역 갱신
             this.renderHeader(fresh);
             this.renderRightPanel(fresh);
             this.applyAuctionStateUi(fresh);
             this.applyHighestUi(fresh);
 
-            // 만약 서버에서 연장 등으로 아직 LIVE라면, 새 endAt 기준으로 카운트다운 재시작
             if (String(fresh?.status ?? "") === "LIVE") {
                 this.prepareBidDefaults(fresh);
                 this.startAccurateCountdown(fresh, serverNowMs, api);
                 return;
             }
 
-            // 종료 상태 라벨
             if (this.isUnsoldAuction(fresh)) {
                 this.remainingTime.textContent = "유찰";
             } else if (this.isCancelledAuction(fresh)) {
@@ -504,12 +477,7 @@ export class Ui {
         }
     }
 
-    /* -----------------------------
-     * State UI
-     * ----------------------------- */
-
     prepareBidDefaults(data) {
-        // 유찰/취소이면 입찰 섹션 자체가 숨김이므로 여기서 종료
         if (this.isUnsoldAuction(data) || this.isCancelledAuction(data)) return;
 
         const minBid = this.computeMinBid(data);
@@ -526,7 +494,6 @@ export class Ui {
         const isLive = String(data?.status ?? "") === "LIVE";
         const isSeller = this.isSeller(data);
 
-        // banner (유찰 또는 취소)
         if (this.unsoldBanner) {
             const showBanner = unsold || cancelled;
             this.unsoldBanner.classList.toggle("hidden", !showBanner);
@@ -543,7 +510,6 @@ export class Ui {
             }
         }
 
-        // gallery badge (유찰, 취소, 낙찰)
         if (this.unsoldBadge) {
             const showBadge = unsold || cancelled || sold;
             this.unsoldBadge.classList.toggle("hidden", !showBadge);
@@ -554,19 +520,16 @@ export class Ui {
             }
         }
 
-        // my auction badge (LIVE && isSeller)
         if (this.myAuctionBadge) {
             const showMyBadge = isLive && isSeller && !unsold && !cancelled;
             this.myAuctionBadge.classList.toggle("hidden", !showMyBadge);
         }
 
-        // bid section: 판매자이거나 유찰/취소 시 숨김
         if (this.bidFormSection) {
             const hideBidSection = isSeller || unsold || cancelled;
             this.bidFormSection.classList.toggle("hidden", hideBidSection);
         }
 
-        // republish button: seller & (unsold or cancelled)
         const canRepublish = isSeller && (unsold || cancelled);
         if (this.republishBox) {
             this.republishBox.classList.toggle("hidden", !canRepublish);
@@ -580,11 +543,9 @@ export class Ui {
             }
         }
 
-        // cancel button: seller & LIVE & bidCount === 0
         const canCancel = isSeller && isLive && (data?.bidCount ?? 0) === 0;
         if (this.cancelBox) this.cancelBox.classList.toggle("hidden", !canCancel);
 
-        // 종료 상태에서 최고입찰 UI들 정리
         if (unsold || cancelled) {
             this.hideBidErrorsAndWarnings();
             this.hideHighestUi();
@@ -595,7 +556,6 @@ export class Ui {
         this.highestBadge?.classList.add("hidden");
         this.highestHint?.classList.add("hidden");
         this.myHighestBidAmount?.classList.add("hidden");
-        // 요청: 경고 박스 사용 안 함
         this.hideNotHighestWarning();
     }
 
@@ -607,7 +567,6 @@ export class Ui {
     updateBidButtonUi(data) {
         if (!this.bidSubmit) return;
 
-        // 유찰 또는 취소
         if (this.isUnsoldAuction(data)) {
             this.bidSubmit.disabled = true;
             this.bidSubmit.textContent = "유찰";
@@ -634,7 +593,6 @@ export class Ui {
     }
 
     applyHighestUi(data) {
-        // LIVE가 아니거나 유찰/취소이면 최고입찰 관련 UI 모두 숨김
         if (String(data?.status ?? "") !== "LIVE" || this.isUnsoldAuction(data) || this.isCancelledAuction(data)) {
             this.hideHighestUi();
             return;
@@ -654,7 +612,6 @@ export class Ui {
             }
         }
 
-        // 요청: 경고 박스(빨간 박스) 대신 토스트만
         if (this.wasHighestBidder === true && isHighest === false) {
             this.setToast("알림", "최고가가 갱신되었습니다. 다시 입찰해 주세요.");
         }
@@ -685,7 +642,6 @@ export class Ui {
     isEndedSold(data) {
         const status = String(data?.status ?? "");
         const reason = String(data?.endReason ?? "");
-        // 요청: 낙찰은 status=ENDED_SOLD && endReason=SOLD 여야 함
         return status === "ENDED_SOLD" && reason === "SOLD";
     }
 
@@ -713,14 +669,9 @@ export class Ui {
         return Math.max(cur + inc, start);
     }
 
-    /* -----------------------------
-     * Interactions
-     * ----------------------------- */
-
     bindInteractions(data, api) {
         this.data = data;
 
-        // republish 버튼 바인딩(한 번만)
         if (this.republishButton && !this.republishButton.dataset.bound) {
             this.republishButton.addEventListener("click", async () => {
                 const d = this.data ?? {};
@@ -761,7 +712,6 @@ export class Ui {
             this.republishButton.dataset.bound = "1";
         }
 
-        // cancel 버튼 바인딩(한 번만) - 요청: 문구 통일 + 강제 새로고침
         if (this.cancelButton && !this.cancelButton.dataset.bound) {
             this.cancelButton.addEventListener("click", async () => {
                 const d = this.data ?? {};
@@ -778,8 +728,7 @@ export class Ui {
 
                     await api.cancelAuctionBySeller(d.auctionId);
 
-                    // 최신 상태 재조회(성공 시 화면 반영)
-                    const { data: fresh, serverNowMs } = await api.fetchDetailWithServerTime(d.auctionId);
+                    const { data: fresh } = await api.fetchDetailWithServerTime(d.auctionId);
 
                     if (fresh && (fresh.bidIncrement === null || fresh.bidIncrement === undefined)) {
                         fresh.bidIncrement = calcBidIncrement(Number(fresh.currentPrice ?? 0));
@@ -796,7 +745,6 @@ export class Ui {
                 } catch (e) {
                     const msg = String(e?.message ?? "");
 
-                    // "중지" -> "취소"로 문구 통일 + 강제 새로고침
                     if (
                         msg.includes("입찰이 존재하는 경매는 중지할 수 없습니다") ||
                         msg.includes("입찰이 존재하는 경매는 취소할 수 없습니다")
@@ -814,7 +762,6 @@ export class Ui {
             this.cancelButton.dataset.bound = "1";
         }
 
-        // bid interactions
         this.bidMinus?.addEventListener("click", () => {
             const d = this.data ?? {};
             if (this.isUnsoldAuction(d) || this.isCancelledAuction(d)) return;
@@ -849,7 +796,6 @@ export class Ui {
             this.validateBid(n, d);
         });
 
-        // 입찰하기
         this.bidSubmit?.addEventListener("click", async () => {
             const d = this.data ?? {};
             if (this.isUnsoldAuction(d) || this.isCancelledAuction(d)) return;
@@ -914,7 +860,6 @@ export class Ui {
             } catch (e) {
                 const msg = String(e?.message ?? "");
 
-                // 요청: stale로 인해 최소입찰가/최고가가 달라졌을 때 → 토스트 + 강제 새로고침
                 if (
                     msg.includes("입찰 금액이 최소 입찰가보다 낮습니다") ||
                     msg.includes("입찰 금액이 최고 입찰가보다 낮습니다")
@@ -1039,7 +984,6 @@ export class Ui {
         this.bidError.classList.add("hidden");
     }
 
-    // 요청: 경고 박스는 사용 안 하므로, 숨김만 유지
     hideNotHighestWarning() {
         if (!this.notHighestWarning) return;
         this.notHighestWarning.classList.add("hidden");

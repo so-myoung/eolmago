@@ -26,4 +26,6 @@ public interface AuctionRepositoryCustom {
     Optional<AuctionDetailDto> findDetailById(UUID auctionId);
 
     Optional<Auction> findByIdForUpdate(UUID auctionId);
+
+    Optional<UUID> findSellerIdByAuctionId(UUID auctionId);
 }

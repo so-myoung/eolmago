@@ -71,9 +71,6 @@ export class Api {
         return { data, response };
     }
 
-    /**
-     * 경매 마감 API 호출 (멱등)
-     */
     async closeAuction(auctionId) {
         const url = `/api/auctions/${encodeURIComponent(auctionId)}/close`;
 
@@ -97,16 +94,6 @@ export class Api {
         return { success: true };
     }
 
-    /**
-     * 거래 생성 (낙찰(ENDED_SOLD & SOLD)일 때만 호출해야 함)
-     * request:
-     * {
-     *   auctionId: UUID,
-     *   sellerId: UUID,
-     *   buyerId: UUID,
-     *   finalPrice: number
-     * }
-     */
     async createDealFromAuction(request) {
         const url = `/api/deals/from-auction`;
 
@@ -130,9 +117,6 @@ export class Api {
         return { data, response };
     }
 
-    /**
-     * 유찰 경매 재등록
-     */
     async republishUnsoldAuction(auctionId) {
         const url = `/api/auctions/${encodeURIComponent(auctionId)}/republish`;
 
@@ -153,9 +137,6 @@ export class Api {
         return { data, response };
     }
 
-    /**
-     * 판매자 경매 취소
-     */
     async cancelAuctionBySeller(auctionId) {
         const url = `/api/auctions/${encodeURIComponent(auctionId)}/stop`;
 
@@ -175,9 +156,6 @@ export class Api {
         return { success: true };
     }
 
-    /**
-     * 입찰 생성
-     */
     async createBid(auctionId, amount, clientRequestId) {
         const url = `/api/auctions/${encodeURIComponent(auctionId)}/bids`;
 
@@ -204,9 +182,6 @@ export class Api {
         return { data, response };
     }
 
-    /**
-     * 신고 생성
-     */
     async createReport(reportData) {
         const url = `/api/reports`;
 

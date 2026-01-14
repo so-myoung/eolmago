@@ -6,8 +6,15 @@ import kr.eolmago.domain.entity.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.UUID;
+
 public interface ReportRepositoryCustom {
+
     Page<Report> findAllWithDetails(Pageable pageable);
+
     Page<Report> findByReporterWithDetails(User reporter, Pageable pageable);
+
     Page<Report> findReportsWithFilters(ReportStatus status, Pageable pageable);
+
+    long countByReportedUserId(UUID userId);
 }
