@@ -12,16 +12,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 이벤트 리스너 ---
     // 사용자 검색
-    document.getElementById('searchBtn').addEventListener('click', () => {
-        currentUserPage = 0;
-        loadUsers();
-    });
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            currentUserPage = 0;
+            loadUsers();
+        });
+    } else {
+        console.warn('searchBtn not found');
+    }
 
     // 신고 검색
-    document.getElementById('searchReportBtn').addEventListener('click', () => {
-        currentReportPage = 0;
-        loadReports();
-    });
+    const searchReportBtn = document.getElementById('searchReportBtn');
+    if (searchReportBtn) {
+        searchReportBtn.addEventListener('click', () => {
+            currentReportPage = 0;
+            loadReports();
+        });
+    } else {
+        console.warn('searchReportBtn not found');
+    }
 
     // 탭 전환
     ['users', 'reports', 'penalties', 'stats'].forEach(tabName => {
@@ -30,6 +40,58 @@ document.addEventListener('DOMContentLoaded', () => {
             tabButton.addEventListener('click', () => switchTab(tabName));
         }
     });
+
+    // 모달 닫기
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', () => {
+            document.getElementById('user-manage-modal').classList.add('hidden');
+        });
+    } else {
+        console.warn('modal-close-btn not found');
+    }
+
+    // 모달 저장
+    const modalSaveBtn = document.getElementById('modal-save-btn');
+    if (modalSaveBtn) {
+        modalSaveBtn.addEventListener('click', async () => {
+            const userId = document.getElementById('modal-user-id').value;
+            const status = document.getElementById('modal-user-status').value;
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/status?status=${status}`, {
+                    method: 'PATCH'
+                });
+
+                if (!response.ok) throw new Error(`Failed to update user status: ${response.statusText}`);
+
+                alert('사용자 상태가 변경되었습니다.');
+                document.getElementById('user-manage-modal').classList.add('hidden');
+                loadUsers(); // 목록 새로고침
+            } catch (error) {
+                console.error('Error updating user status:', error);
+                alert('사용자 상태 변경에 실패했습니다.');
+            }
+        });
+    } else {
+        console.warn('modal-save-btn not found');
+    }
+
+    // 사용자 관리 버튼에 대한 이벤트 위임
+    const userList = document.getElementById('userList');
+    if (userList) {
+        userList.addEventListener('click', (event) => {
+            const button = event.target.closest('.manage-user-btn');
+            if (button) {
+                const userId = button.dataset.userId;
+                const nickname = button.dataset.nickname;
+                const status = button.dataset.status;
+                openUserManageModal(userId, nickname, status);
+            }
+        });
+    } else {
+        console.warn('userList not found');
+    }
 
     // --- 사용자 관리 기능 ---
     async function loadUsers() {
@@ -68,15 +130,33 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-gray-50';
+            //onclick 속성 제거, data-* 속성 및 클래스 추가
             tr.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="h-10 w-10 flex-shrink-0"><img class="h-10 w-10 rounded-full bg-gray-200" src="${user.profileImageUrl || '/images/profile/base.png'}" alt="프로필 이미지"></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">${escapeHtml(user.nickname)}</div><div class="text-sm text-gray-500">${user.userId.substring(0, 8)}...</div></div></div></td>
                 <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${escapeHtml(user.email)}</div><div class="text-sm text-gray-500">${user.phone || '-'}</div></td>
                 <td class="px-6 py-4 whitespace-nowrap">${getStatusBadge(user.status, 'user')}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(user.createdAt)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onclick="manageUser('${user.userId}')" class="text-indigo-600 hover:text-indigo-900 font-medium">관리</button></td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button class="manage-user-btn text-indigo-600 hover:text-indigo-900 font-medium"
+                            data-user-id="${user.userId}"
+                            data-nickname="${escapeHtml(user.nickname)}"
+                            data-status="${user.status}">
+                        관리
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    // 모달을 여는 함수
+    function openUserManageModal(userId, nickname, status) {
+        document.getElementById('modal-user-id').value = userId;
+        document.getElementById('modal-user-info').textContent = `사용자: ${nickname} (${userId})`;
+        document.getElementById('modal-user-status').value = status;
+
+        const modal = document.getElementById('user-manage-modal');
+        modal.classList.remove('hidden');
     }
 
     // --- 신고 관리 기능 ---
@@ -242,6 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    window.manageUser = (userId) => alert(`사용자 관리 모달을 엽니다: ${userId}`);
+    // 전역 manageUser 함수 제거
     window.manageReport = (reportId) => alert(`신고 상세 보기 모달을 엽니다: ${reportId}`);
 });
