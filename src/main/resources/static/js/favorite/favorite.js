@@ -133,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 로그인하지 않았거나 ANONYMOUS면 API 호출하지 않음
         if (!userRole || userRole === 'ANONYMOUS') {
-            console.log('✅ favorite.js: 로그인 안 함, API 호출 스킵');
             buttons.forEach((btn) => setHeartUI(btn, false));
             return;
         }
@@ -148,7 +147,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (!res || !res.ok) {
-            console.log('✅ favorite.js: API 호출 실패');
             buttons.forEach((btn) => setHeartUI(btn, false));
             return;
         }
