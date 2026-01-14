@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static kr.eolmago.domain.entity.user.QUser.user;
 import static kr.eolmago.domain.entity.user.QUserPenalty.userPenalty;
@@ -76,7 +77,7 @@ public class UserPenaltyRepositoryImpl implements UserPenaltyRepositoryCustom {
                 .fetch();
     }
 
-    // ✅ 추가: 전체 제재 이력 조회 (페이지네이션 + 필터링)
+    // 전체 제재 이력 조회 (페이지네이션 + 필터링)
     @Override
     public Page<UserPenalty> findAllPenaltiesWithFilters(PenaltyType type, Pageable pageable) {
         QUserPenalty penalty = QUserPenalty.userPenalty;
@@ -109,5 +110,16 @@ public class UserPenaltyRepositoryImpl implements UserPenaltyRepositoryCustom {
                 .fetch();
 
         return new PageImpl<>(penalties, pageable, total != null ? total : 0);
+    }
+
+    @Override
+    public long countByUserId(UUID userId) {
+        Long cnt = queryFactory
+                .select(userPenalty.penaltyId.count())
+                .from(userPenalty)
+                .where(userPenalty.user.userId.eq(userId))
+                .fetchOne();
+
+        return cnt != null ? cnt : 0L;
     }
 }

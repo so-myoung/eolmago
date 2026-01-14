@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -65,5 +67,18 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .fetchOne();
 
         return new PageImpl<>(users, pageable, total != null ? total : 0);
+    }
+
+    @Override
+    public Optional<String> findEmailById(UUID userId) {
+        QSocialLogin socialLogin = QSocialLogin.socialLogin;
+
+        String email = queryFactory
+                .select(socialLogin.email)
+                .from(socialLogin)
+                .where(socialLogin.user.userId.eq(userId))
+                .fetchFirst(); // 다건 가능성 대비 (fetchOne 대신)
+
+        return Optional.ofNullable(email);
     }
 }

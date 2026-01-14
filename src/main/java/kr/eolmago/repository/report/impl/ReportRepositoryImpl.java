@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static kr.eolmago.domain.entity.report.QReport.report;
 
@@ -110,4 +111,16 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
 
         return new PageImpl<>(reports, pageable, total);
     }
+
+    @Override
+    public long countByReportedUserId(UUID userId) {
+        Long cnt = queryFactory
+                .select(report.reportId.count())
+                .from(report)
+                .where(report.reportedUser.userId.eq(userId))
+                .fetchOne();
+
+        return cnt != null ? cnt : 0L;
+    }
+
 }

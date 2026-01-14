@@ -12,7 +12,6 @@ import java.util.UUID;
 import static kr.eolmago.domain.entity.user.QUser.user;
 import static kr.eolmago.domain.entity.user.QUserProfile.userProfile;
 
-@Slf4j
 public class UserProfileRepositoryImpl implements UserProfileRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
@@ -23,8 +22,6 @@ public class UserProfileRepositoryImpl implements UserProfileRepositoryCustom {
 
     @Override
     public Optional<UserProfile> findByUserIdWithUser(UUID userId) {
-        log.debug("프로필 조회: userId={}", userId);
-
         UserProfile result = queryFactory
                 .selectFrom(userProfile)
                 .leftJoin(userProfile.user, user).fetchJoin()
@@ -36,12 +33,22 @@ public class UserProfileRepositoryImpl implements UserProfileRepositoryCustom {
 
     @Override
     public boolean existsByNickname(String nickname) {
-        log.debug("닉네임 존재 여부 확인: nickname={}", nickname);
-
         return queryFactory
                 .selectOne()
                 .from(userProfile)
                 .where(userProfile.nickname.eq(nickname))
                 .fetchOne() != null;
+    }
+
+    @Override
+    public Optional<String> findNicknameByUserId(UUID userId) {
+        String nickname = queryFactory
+                .select(userProfile.nickname)
+                .from(userProfile)
+                .leftJoin(userProfile.user, user) // userProfile.user.userId 조건 때문에 조인 유지
+                .where(userProfile.user.userId.eq(userId))
+                .fetchOne();
+
+        return Optional.ofNullable(nickname);
     }
 }
