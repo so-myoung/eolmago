@@ -29,6 +29,15 @@ spring:
       password: ${REDIS_PASSWORD}
       ssl:
         enabled: true
+      timeout: 5s
+      lettuce:
+        shutdown-timeout: 0ms
+        pool:
+          enabled: true
+          max-active: 16
+          max-idle: 16
+          min-idle: 4
+          max-wait: 2s
 
   security:
     oauth2:
