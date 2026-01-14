@@ -868,6 +868,13 @@ export class Ui {
             const userRole = this.bidSubmit.dataset.userRole;
             const userStatus = this.bidSubmit.dataset.userStatus;
 
+            // 로그인 체크 (최우선) - ANONYMOUS, 빈 문자열, null 체크
+            if (!userRole || userRole === "" || userRole === "ANONYMOUS") {
+                alert("로그인이 필요합니다.");
+                window.location.href = "/login";
+                return;
+            }
+
             // SUSPENDED 체크 (우선순위 높음)
             if (userStatus === 'SUSPENDED') {
                 // 정지 정보 조회
