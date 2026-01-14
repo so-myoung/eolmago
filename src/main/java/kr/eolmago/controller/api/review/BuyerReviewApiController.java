@@ -33,8 +33,7 @@ public class BuyerReviewApiController {
     @Operation(summary = "구매자 작성 리뷰 목록 조회")
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> getBuyerReviews(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(name = "filter", required = false, defaultValue = "all") String filter
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID buyerId = userDetails.getUserId();
 

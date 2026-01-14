@@ -33,8 +33,7 @@ public class SellerReviewApiController {
     @Operation(summary = "판매자 받은 리뷰 목록 조회")
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> getSellerReviews(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(name = "filter", required = false, defaultValue = "all") String filter
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID sellerId = userDetails.getUserId();
 
