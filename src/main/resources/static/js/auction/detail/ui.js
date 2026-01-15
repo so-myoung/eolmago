@@ -63,7 +63,7 @@ export class Ui {
         this.bidCount = root.querySelector("#bid-count");
         this.bidIncrement = root.querySelector("#bid-increment");
 
-        // A) highest badge
+        // highest badge
         this.highestBadge = root.querySelector("#highest-badge");
 
         // my highest bid display
@@ -91,11 +91,11 @@ export class Ui {
         this.bidError = root.querySelector("#bid-error");
         this.bidSubmit = root.querySelector("#bid-submit");
 
-        // not highest warning
+        // not highest warning (요청: 토스트만 쓰므로 사용 안 함)
         this.notHighestWarning = root.querySelector("#not-highest-warning");
         this.minBidWarning = root.querySelector("#min-bid-warning");
 
-        // C) highest hint
+        // highest hint
         this.highestHint = root.querySelector("#highest-hint");
 
         // confirmation toast
@@ -114,14 +114,6 @@ export class Ui {
 
         // popular auctions
         this.popularAuctions = root.querySelector("#popular-auctions");
-
-        // report modal
-        this.reportButton = root.querySelector("#report-button");
-        this.reportModal = root.querySelector("#report-modal");
-        this.reportForm = root.querySelector("#report-form");
-        this.reportCancel = root.querySelector("#report-cancel");
-        this.reportDescription = root.querySelector("#report-description");
-        this.reportReason = root.querySelector("#report-reason");
 
         // gallery state
         this.galleryUrls = [];
@@ -169,6 +161,31 @@ export class Ui {
         this.setToast("오류", message);
     }
 
+    forceReloadWithToast(message, title = "오류") {
+        this.setToast(title, message);
+
+        const READ_DELAY_MS = 1500;
+
+        const url = window.location.href;
+        const busted = url + (url.includes("?") ? "&" : "?") + "r=" + Date.now();
+
+        setTimeout(() => {
+            try {
+                window.location.replace(busted);
+            } catch {
+                // ignore
+            }
+        }, READ_DELAY_MS);
+
+        setTimeout(() => {
+            try {
+                window.location.reload();
+            } catch {
+                // ignore
+            }
+        }, READ_DELAY_MS + 1200);
+    }
+
     renderAll(data, serverNowMs, api) {
         this.data = data;
 
@@ -179,16 +196,11 @@ export class Ui {
         this.renderDetail(data);
         this.renderSeller(data);
 
-        // 상태별 UI (유찰 포함) 먼저 반영
         this.applyAuctionStateUi(data);
 
-        // countdown
         this.startAccurateCountdown(data, serverNowMs, api);
 
-        // bid defaults (유찰이면 숨김이므로 내부에서 방어)
         this.prepareBidDefaults(data);
-
-        // highest UI (LIVE가 아니거나 유찰이면 내부에서 숨김 처리)
         this.applyHighestUi(data);
 
         if (this.sellerCard && !this.sellerCard.dataset.bound) {
@@ -198,12 +210,12 @@ export class Ui {
     }
 
     renderHeader(data) {
-        if (this.auctionTitle) this.auctionTitle.textContent = safeText(data.title);
-        if (this.itemName) this.itemName.textContent = safeText(data.itemName);
+        if (this.auctionTitle) this.auctionTitle.textContent = safeText(data?.title);
+        if (this.itemName) this.itemName.textContent = safeText(data?.itemName);
     }
 
     renderGallery(data) {
-        const directUrls = Array.isArray(data.imageUrls) ? data.imageUrls.filter(Boolean) : [];
+        const directUrls = Array.isArray(data?.imageUrls) ? data.imageUrls.filter(Boolean) : [];
         const normalized = normalizeOrderedImages(data).map((x) => x.url).filter(Boolean);
         const urls = directUrls.length ? directUrls : normalized;
 
@@ -341,25 +353,25 @@ export class Ui {
     }
 
     renderRightPanel(data) {
-        if (this.currentPrice) this.currentPrice.textContent = formatNumber(data.currentPrice);
-        if (this.startPrice) this.startPrice.textContent = formatNumber(data.startPrice);
+        if (this.currentPrice) this.currentPrice.textContent = formatNumber(data?.currentPrice);
+        if (this.startPrice) this.startPrice.textContent = formatNumber(data?.startPrice);
 
-        if (this.bidCount) this.bidCount.textContent = String(data.bidCount ?? 0);
-        if (this.bidIncrement) this.bidIncrement.textContent = formatNumber(data.bidIncrement ?? 0);
+        if (this.bidCount) this.bidCount.textContent = String(data?.bidCount ?? 0);
+        if (this.bidIncrement) this.bidIncrement.textContent = formatNumber(data?.bidIncrement ?? 0);
 
-        if (this.endAt) this.endAt.textContent = formatEndAt(data.endAt);
-        if (this.auctionIdShort) this.auctionIdShort.textContent = shortUuid(data.auctionId);
+        if (this.endAt) this.endAt.textContent = formatEndAt(data?.endAt);
+        if (this.auctionIdShort) this.auctionIdShort.textContent = shortUuid(data?.auctionId);
     }
 
     renderDetail(data) {
-        if (this.detailItemName) this.detailItemName.textContent = safeText(data.itemName);
-        if (this.detailCondition) this.detailCondition.textContent = resolveLabel("condition", data.condition);
+        if (this.detailItemName) this.detailItemName.textContent = safeText(data?.itemName);
+        if (this.detailCondition) this.detailCondition.textContent = resolveLabel("condition", data?.condition);
 
-        const hasDescription = data.description && String(data.description).trim();
+        const hasDescription = data?.description && String(data.description).trim();
         if (this.descSection) this.descSection.classList.toggle("hidden", !hasDescription);
-        if (this.desc && hasDescription) this.desc.textContent = safeText(data.description);
+        if (this.desc && hasDescription) this.desc.textContent = safeText(data?.description);
 
-        const directUrls = Array.isArray(data.imageUrls) ? data.imageUrls.filter(Boolean) : [];
+        const directUrls = Array.isArray(data?.imageUrls) ? data.imageUrls.filter(Boolean) : [];
         const ordered = normalizeOrderedImages(data).map((x) => x.url).filter(Boolean);
         const urls = directUrls.length ? directUrls : ordered;
 
@@ -382,15 +394,15 @@ export class Ui {
     }
 
     renderSeller(data) {
-        if (this.sellerNickname) this.sellerNickname.textContent = safeText(data.sellerNickname);
-        if (this.sellerAvatar) this.sellerAvatar.src = safeText(data.sellerProfileImageUrl, "/images/avatar-placeholder.png");
-        if (this.sellerTradeCount) this.sellerTradeCount.textContent = String(data.sellerTradeCount ?? 0);
+        if (this.sellerNickname) this.sellerNickname.textContent = safeText(data?.sellerNickname);
+        if (this.sellerAvatar) this.sellerAvatar.src = safeText(data?.sellerProfileImageUrl, "/images/avatar-placeholder.png");
+        if (this.sellerTradeCount) this.sellerTradeCount.textContent = String(data?.sellerTradeCount ?? 0);
     }
 
     startAccurateCountdown(data, serverNowMs, api) {
         if (!this.remainingTime) return;
 
-        const endAtMs = parseOffsetDateTimeToMs(data.endAt);
+        const endAtMs = parseOffsetDateTimeToMs(data?.endAt);
         if (!endAtMs) {
             this.remainingTime.textContent = "-";
             return;
@@ -408,7 +420,6 @@ export class Ui {
                 this.remainingTime.textContent = formatRemainingHms(diffMs);
             },
             onDone: () => {
-                // 0초 도달 시 서버 마감 확정 후 최신 상태 반영(유찰 포함)
                 this.handleCountdownDone(api);
             }
         });
@@ -418,7 +429,6 @@ export class Ui {
         const d = this.data ?? {};
         if (!this.remainingTime) return;
 
-        // 즉시 UI 표시(이후 서버 확정으로 갱신)
         this.remainingTime.textContent = "경매 종료";
 
         if (!api || this._closingLock) {
@@ -429,10 +439,8 @@ export class Ui {
 
         this._closingLock = true;
         try {
-            // 서버 마감 호출(멱등)
             await api.closeAuction(d.auctionId);
 
-            // 최신 상태 재조회
             const { data: fresh, serverNowMs } = await api.fetchDetailWithServerTime(d.auctionId);
 
             if (fresh && (fresh.bidIncrement === null || fresh.bidIncrement === undefined)) {
@@ -441,20 +449,17 @@ export class Ui {
 
             this.data = fresh;
 
-            // 주요 영역 갱신
             this.renderHeader(fresh);
             this.renderRightPanel(fresh);
             this.applyAuctionStateUi(fresh);
             this.applyHighestUi(fresh);
 
-            // 만약 서버에서 연장 등으로 아직 LIVE라면, 새 endAt 기준으로 카운트다운 재시작
-            if (String(fresh.status ?? "") === "LIVE") {
+            if (String(fresh?.status ?? "") === "LIVE") {
                 this.prepareBidDefaults(fresh);
                 this.startAccurateCountdown(fresh, serverNowMs, api);
                 return;
             }
 
-            // 종료 상태 라벨
             if (this.isUnsoldAuction(fresh)) {
                 this.remainingTime.textContent = "유찰";
             } else if (this.isCancelledAuction(fresh)) {
@@ -473,7 +478,6 @@ export class Ui {
     }
 
     prepareBidDefaults(data) {
-        // 유찰/취소이면 입찰 섹션 자체가 숨김이므로 여기서 종료
         if (this.isUnsoldAuction(data) || this.isCancelledAuction(data)) return;
 
         const minBid = this.computeMinBid(data);
@@ -486,10 +490,10 @@ export class Ui {
     applyAuctionStateUi(data) {
         const unsold = this.isUnsoldAuction(data);
         const cancelled = this.isCancelledAuction(data);
-        const isLive = String(data.status ?? "") === "LIVE";
+        const sold = this.isEndedSold(data);
+        const isLive = String(data?.status ?? "") === "LIVE";
         const isSeller = this.isSeller(data);
 
-        // banner (유찰 또는 취소)
         if (this.unsoldBanner) {
             const showBanner = unsold || cancelled;
             this.unsoldBanner.classList.toggle("hidden", !showBanner);
@@ -506,32 +510,29 @@ export class Ui {
             }
         }
 
-        // gallery badge (유찰 또는 취소)
         if (this.unsoldBadge) {
-            const showBadge = unsold || cancelled;
+            const showBadge = unsold || cancelled || sold;
             this.unsoldBadge.classList.toggle("hidden", !showBadge);
             if (showBadge) {
-                this.unsoldBadge.textContent = cancelled ? "경매 취소" : "유찰";
+                if (cancelled) this.unsoldBadge.textContent = "경매 취소";
+                else if (sold) this.unsoldBadge.textContent = "낙찰";
+                else this.unsoldBadge.textContent = "유찰";
             }
         }
 
-        // my auction badge (LIVE && isSeller)
         if (this.myAuctionBadge) {
             const showMyBadge = isLive && isSeller && !unsold && !cancelled;
             this.myAuctionBadge.classList.toggle("hidden", !showMyBadge);
         }
 
-        // bid section: 판매자이거나 유찰/취소 시 숨김
         if (this.bidFormSection) {
             const hideBidSection = isSeller || unsold || cancelled;
             this.bidFormSection.classList.toggle("hidden", hideBidSection);
         }
 
-        // republish button: seller & (unsold or cancelled)
         const canRepublish = isSeller && (unsold || cancelled);
         if (this.republishBox) {
             this.republishBox.classList.toggle("hidden", !canRepublish);
-            // 힌트 문구: NO_BIDS일 때만 표시
             if (this.republishHint) {
                 if (unsold) {
                     this.republishHint.classList.remove("hidden");
@@ -542,11 +543,9 @@ export class Ui {
             }
         }
 
-        // cancel button: seller & LIVE & bidCount === 0
-        const canCancel = isSeller && isLive && (data.bidCount ?? 0) === 0;
+        const canCancel = isSeller && isLive && (data?.bidCount ?? 0) === 0;
         if (this.cancelBox) this.cancelBox.classList.toggle("hidden", !canCancel);
 
-        // 종료 상태에서 최고입찰 UI들 정리
         if (unsold || cancelled) {
             this.hideBidErrorsAndWarnings();
             this.hideHighestUi();
@@ -568,7 +567,6 @@ export class Ui {
     updateBidButtonUi(data) {
         if (!this.bidSubmit) return;
 
-        // 유찰 또는 취소
         if (this.isUnsoldAuction(data)) {
             this.bidSubmit.disabled = true;
             this.bidSubmit.textContent = "유찰";
@@ -581,7 +579,7 @@ export class Ui {
             return;
         }
 
-        const isLive = String(data.status ?? "") === "LIVE";
+        const isLive = String(data?.status ?? "") === "LIVE";
         this.bidSubmit.disabled = !isLive;
 
         if (!isLive) {
@@ -595,25 +593,19 @@ export class Ui {
     }
 
     applyHighestUi(data) {
-        // LIVE가 아니거나 유찰/취소이면 최고입찰 관련 UI 모두 숨김
-        if (String(data.status ?? "") !== "LIVE" || this.isUnsoldAuction(data) || this.isCancelledAuction(data)) {
+        if (String(data?.status ?? "") !== "LIVE" || this.isUnsoldAuction(data) || this.isCancelledAuction(data)) {
             this.hideHighestUi();
             return;
         }
 
         const isHighest = this.isHighestBidder(data);
 
-        if (this.highestBadge) {
-            this.highestBadge.classList.toggle("hidden", !isHighest);
-        }
-
-        if (this.highestHint) {
-            this.highestHint.classList.toggle("hidden", !isHighest);
-        }
+        if (this.highestBadge) this.highestBadge.classList.toggle("hidden", !isHighest);
+        if (this.highestHint) this.highestHint.classList.toggle("hidden", !isHighest);
 
         if (this.myHighestBidAmount && this.myBidValue) {
             if (isHighest) {
-                this.myBidValue.textContent = formatNumber(data.currentPrice);
+                this.myBidValue.textContent = formatNumber(data?.currentPrice);
                 this.myHighestBidAmount.classList.remove("hidden");
             } else {
                 this.myHighestBidAmount.classList.add("hidden");
@@ -621,10 +613,7 @@ export class Ui {
         }
 
         if (this.wasHighestBidder === true && isHighest === false) {
-            this.showNotHighestWarning(data);
-            this.setToast("알림", "다른 사용자가 더 높은 금액을 입찰했습니다.");
-        } else if (isHighest) {
-            this.hideNotHighestWarning();
+            this.setToast("알림", "최고가가 갱신되었습니다. 다시 입찰해 주세요.");
         }
 
         this.wasHighestBidder = isHighest;
@@ -638,21 +627,24 @@ export class Ui {
         return me === highest;
     }
 
-    // 유찰 판정: status + endReason
     isUnsoldAuction(data) {
         const status = String(data?.status ?? "");
         const reason = String(data?.endReason ?? "");
         return status === "ENDED_UNSOLD" && reason === "NO_BIDS";
     }
 
-    // 판매자 취소 판정: status + endReason
     isCancelledAuction(data) {
         const status = String(data?.status ?? "");
         const reason = String(data?.endReason ?? "");
         return status === "ENDED_UNSOLD" && reason === "SELLER_STOPPED";
     }
 
-    // 판매자 판정(백엔드 필드명 차이 방어)
+    isEndedSold(data) {
+        const status = String(data?.status ?? "");
+        const reason = String(data?.endReason ?? "");
+        return status === "ENDED_SOLD" && reason === "SOLD";
+    }
+
     isSeller(data) {
         const me = this.meUserId;
         if (!me) return false;
@@ -671,16 +663,15 @@ export class Ui {
     }
 
     computeMinBid(data) {
-        const cur = Number(data.currentPrice ?? 0);
-        const inc = Number(data.bidIncrement ?? 0);
-        const start = Number(data.startPrice ?? 0);
+        const cur = Number(data?.currentPrice ?? 0);
+        const inc = Number(data?.bidIncrement ?? 0);
+        const start = Number(data?.startPrice ?? 0);
         return Math.max(cur + inc, start);
     }
 
     bindInteractions(data, api) {
         this.data = data;
 
-        // republish 버튼 바인딩(한 번만)
         if (this.republishButton && !this.republishButton.dataset.bound) {
             this.republishButton.addEventListener("click", async () => {
                 const d = this.data ?? {};
@@ -700,7 +691,6 @@ export class Ui {
 
                     const { data: repub } = await api.republishUnsoldAuction(d.auctionId);
 
-                    // 응답 필드명 방어: newAuctionId(백엔드 실제 필드) 우선
                     const newId =
                         repub?.newAuctionId ??
                         repub?.auctionId ??
@@ -709,11 +699,8 @@ export class Ui {
                         repub?.id ??
                         "";
 
-                    if (!newId) {
-                        throw new Error("재등록 응답에 이동할 ID가 없습니다.");
-                    }
+                    if (!newId) throw new Error("재등록 응답에 이동할 ID가 없습니다.");
 
-                    // 임시저장 수정 페이지로 이동
                     window.location.href = `/seller/auctions/drafts/${encodeURIComponent(newId)}`;
                 } catch (e) {
                     this.toastError(e?.message || "재등록에 실패했습니다.");
@@ -725,15 +712,12 @@ export class Ui {
             this.republishButton.dataset.bound = "1";
         }
 
-        // cancel 버튼 바인딩(한 번만)
         if (this.cancelButton && !this.cancelButton.dataset.bound) {
             this.cancelButton.addEventListener("click", async () => {
                 const d = this.data ?? {};
-                const isLive = String(d.status ?? "") === "LIVE";
-                const bidCount = d.bidCount ?? 0;
+                const isLive = String(d?.status ?? "") === "LIVE";
 
                 if (!isLive) return;
-                if (bidCount > 0) return;
                 if (!this.isSeller(d)) return;
 
                 const ok = window.confirm("경매를 취소하시겠습니까?");
@@ -744,8 +728,7 @@ export class Ui {
 
                     await api.cancelAuctionBySeller(d.auctionId);
 
-                    // 최신 상태 재조회
-                    const { data: fresh, serverNowMs } = await api.fetchDetailWithServerTime(d.auctionId);
+                    const { data: fresh } = await api.fetchDetailWithServerTime(d.auctionId);
 
                     if (fresh && (fresh.bidIncrement === null || fresh.bidIncrement === undefined)) {
                         fresh.bidIncrement = calcBidIncrement(Number(fresh.currentPrice ?? 0));
@@ -753,15 +736,24 @@ export class Ui {
 
                     this.data = fresh;
 
-                    // UI 갱신
                     this.renderHeader(fresh);
                     this.renderRightPanel(fresh);
                     this.applyAuctionStateUi(fresh);
                     this.applyHighestUi(fresh);
 
-                    this.setToast("경매 취소", "경매가 취소되었습니다. 재등록할 수 있습니다.");
+                    this.setToast("경매 취소", "경매가 취소되었습니다.");
                 } catch (e) {
-                    this.toastError(e?.message || "경매 취소에 실패했습니다.");
+                    const msg = String(e?.message ?? "");
+
+                    if (
+                        msg.includes("입찰이 존재하는 경매는 중지할 수 없습니다") ||
+                        msg.includes("입찰이 존재하는 경매는 취소할 수 없습니다")
+                    ) {
+                        this.forceReloadWithToast("입찰이 존재하는 경매는 취소할 수 없습니다", "오류");
+                        return;
+                    }
+
+                    this.toastError(msg || "경매 취소에 실패했습니다.");
                 } finally {
                     this.setLoading(false);
                 }
@@ -770,75 +762,16 @@ export class Ui {
             this.cancelButton.dataset.bound = "1";
         }
 
-        // Report Modal Interactions
-        if (this.reportButton && !this.reportButton.dataset.bound) {
-            this.reportButton.addEventListener("click", () => {
-                if (this.reportModal) {
-                    this.reportModal.classList.remove("hidden");
-                    this.reportModal.classList.add("flex");
-                }
-            });
-            this.reportButton.dataset.bound = "1";
-        }
-
-        if (this.reportCancel && !this.reportCancel.dataset.bound) {
-            this.reportCancel.addEventListener("click", () => {
-                if (this.reportModal) {
-                    this.reportModal.classList.add("hidden");
-                    this.reportModal.classList.remove("flex");
-                    this.reportForm?.reset();
-                }
-            });
-            this.reportCancel.dataset.bound = "1";
-        }
-
-        if (this.reportForm && !this.reportForm.dataset.bound) {
-            this.reportForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const d = this.data ?? {};
-                const formData = new FormData(this.reportForm);
-                const targetType = formData.get("reportTarget");
-                const reason = this.reportReason?.value;
-                const description = this.reportDescription?.value;
-
-                if (!description || description.length < 10) {
-                    alert("신고 내용은 최소 10자 이상 입력해주세요.");
-                    return;
-                }
-
-                try {
-                    this.setLoading(true);
-                    await api.createReport({
-                        auctionId: d.auctionId,
-                        reportedUserId: d.sellerId || d.sellerUserId, // Assuming seller is reported
-                        type: targetType,
-                        reason: reason,
-                        description: description
-                    });
-                    this.setToast("신고 접수", "신고가 정상적으로 접수되었습니다.");
-                    this.reportModal.classList.add("hidden");
-                    this.reportModal.classList.remove("flex");
-                    this.reportForm.reset();
-                } catch (err) {
-                    this.toastError(err.message || "신고 접수에 실패했습니다.");
-                } finally {
-                    this.setLoading(false);
-                }
-            });
-            this.reportForm.dataset.bound = "1";
-        }
-
-        // 유찰/취소이면 입찰 인터랙션 자체가 필요 없으므로, 아래 바인딩은 유지하되 실행 전 validate에서 방어
         this.bidMinus?.addEventListener("click", () => {
             const d = this.data ?? {};
             if (this.isUnsoldAuction(d) || this.isCancelledAuction(d)) return;
-            this.adjustBidBy(-Number(d.bidIncrement ?? 0), d);
+            this.adjustBidBy(-Number(d?.bidIncrement ?? 0), d);
         });
 
         this.bidPlus?.addEventListener("click", () => {
             const d = this.data ?? {};
             if (this.isUnsoldAuction(d) || this.isCancelledAuction(d)) return;
-            this.adjustBidBy(Number(d.bidIncrement ?? 0), d);
+            this.adjustBidBy(Number(d?.bidIncrement ?? 0), d);
         });
 
         this.bidQuickBtns?.forEach((btn) => {
@@ -863,42 +796,7 @@ export class Ui {
             this.validateBid(n, d);
         });
 
-        // 입찰하기
         this.bidSubmit?.addEventListener("click", async () => {
-            const userRole = this.bidSubmit.dataset.userRole;
-            const userStatus = this.bidSubmit.dataset.userStatus;
-
-            // 로그인 체크 (최우선) - ANONYMOUS, 빈 문자열, null 체크
-            if (!userRole || userRole === "" || userRole === "ANONYMOUS") {
-                alert("로그인이 필요합니다.");
-                window.location.href = "/login";
-                return;
-            }
-
-            // SUSPENDED 체크 (우선순위 높음)
-            if (userStatus === 'SUSPENDED') {
-                // 정지 정보 조회
-                const penaltyInfo = await this.fetchPenaltyInfo();
-
-                if (penaltyInfo) {
-                    const expiresDate = this.formatPenaltyDate(penaltyInfo.expiresAt);
-                    alert(
-                        `서비스 이용약관 위반으로 인해 서비스 이용이 제한되었습니다.\n\n` +
-                        `- 정지 사유: ${penaltyInfo.reason}\n` +
-                        `- 이용 재개: ${expiresDate}`
-                    );
-                } else {
-                    alert('서비스 이용이 제한되었습니다.');
-                }
-                return;
-            }
-
-            // GUEST 체크
-            if (userRole === 'GUEST') {
-                alert('전화번호 미인증 계정입니다. 전화번호 인증 후 이용 가능합니다.');
-                return;
-            }
-
             const d = this.data ?? {};
             if (this.isUnsoldAuction(d) || this.isCancelledAuction(d)) return;
 
@@ -922,7 +820,7 @@ export class Ui {
             }
 
             const originalText = this.bidSubmit.textContent;
-            const oldEndAtMs = parseOffsetDateTimeToMs(d.endAt);
+            const oldEndAtMs = parseOffsetDateTimeToMs(d?.endAt);
 
             this.bidSubmit.disabled = true;
             this.bidSubmit.textContent = "입찰 중...";
@@ -939,13 +837,13 @@ export class Ui {
                     fresh.bidIncrement = calcBidIncrement(Number(fresh.currentPrice ?? 0));
                 }
 
-                const newEndAtMs = parseOffsetDateTimeToMs(fresh.endAt);
+                const newEndAtMs = parseOffsetDateTimeToMs(fresh?.endAt);
                 const extended = (oldEndAtMs && newEndAtMs && newEndAtMs > oldEndAtMs);
 
                 this.setToast(
                     "입찰 성공",
                     extended
-                        ? "입찰이 반영되었고 종료 시간이 연장되었습니다."
+                        ? "입찰이 반영되었습니다. 종료 시간이 자동 연장되었습니다."
                         : "입찰이 반영되었습니다."
                 );
 
@@ -960,11 +858,21 @@ export class Ui {
                 this.prepareBidDefaults(fresh);
                 this.applyHighestUi(fresh);
             } catch (e) {
-                this.toastError(e.message || "입찰에 실패했습니다.");
+                const msg = String(e?.message ?? "");
+
+                if (
+                    msg.includes("입찰 금액이 최소 입찰가보다 낮습니다") ||
+                    msg.includes("입찰 금액이 최고 입찰가보다 낮습니다")
+                ) {
+                    this.forceReloadWithToast(msg, "오류");
+                    return;
+                }
+
+                this.toastError(msg || "입찰에 실패했습니다.");
             } finally {
                 const latest = this.data ?? data;
 
-                if (String(latest.status ?? "") === "LIVE" && !this.isUnsoldAuction(latest) && !this.isCancelledAuction(latest)) {
+                if (String(latest?.status ?? "") === "LIVE" && !this.isUnsoldAuction(latest) && !this.isCancelledAuction(latest)) {
                     this.updateBidButtonUi(latest);
                 } else if (this.bidSubmit) {
                     if (this.isUnsoldAuction(latest)) {
@@ -994,37 +902,6 @@ export class Ui {
         this.bidSubmit.textContent = prev;
     }
 
-    // 정지 정보 조회
-    async fetchPenaltyInfo() {
-        try {
-            const response = await fetch('/api/users/me/penalty', {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' },
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                return await response.json();
-            }
-            return null;
-        } catch (error) {
-            console.error('정지 정보 조회 실패:', error);
-            return null;
-        }
-    }
-
-    // 날짜 포맷팅
-    formatPenaltyDate(dateString) {
-        if (!dateString) return '무기한';
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}년 ${month}월 ${day}일 ${hours}:${minutes}`;
-    }
-
     flashPriceCard() {
         if (!this.priceCard) return;
 
@@ -1052,7 +929,6 @@ export class Ui {
     }
 
     validateBid(amount, data) {
-        // 유찰/취소이면 항상 false
         if (this.isUnsoldAuction(data)) {
             this.showBidError("유찰된 경매는 입찰할 수 없습니다.");
             return false;
@@ -1064,7 +940,7 @@ export class Ui {
         }
 
         const minBid = this.computeMinBid(data);
-        const inc = Number(data.bidIncrement ?? 0);
+        const inc = Number(data?.bidIncrement ?? 0);
 
         if (amount < minBid) {
             this.showBidError(`최소 입찰 금액은 ${formatNumber(minBid)}원입니다.`);
@@ -1106,13 +982,6 @@ export class Ui {
         if (!this.bidError) return;
         this.bidError.textContent = "";
         this.bidError.classList.add("hidden");
-    }
-
-    showNotHighestWarning(data) {
-        if (!this.notHighestWarning || !this.minBidWarning) return;
-        const minBid = this.computeMinBid(data);
-        this.minBidWarning.textContent = formatNumber(minBid);
-        this.notHighestWarning.classList.remove("hidden");
     }
 
     hideNotHighestWarning() {
@@ -1169,7 +1038,7 @@ export class Ui {
         this.popularAuctions.innerHTML = "";
 
         const filteredAuctions = (auctions || []).filter(
-            auction => auction.auctionId !== currentAuctionId
+            (auction) => auction?.auctionId !== currentAuctionId
         );
 
         if (filteredAuctions.length === 0) return;
@@ -1177,14 +1046,15 @@ export class Ui {
         filteredAuctions.forEach((auction) => {
             const card = document.createElement("a");
             card.href = `/auctions/${auction.auctionId}`;
-            card.className = "group block flex-shrink-0 w-40 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md hover:ring-slate-300";
+            card.className =
+                "group block flex-shrink-0 w-40 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md hover:ring-slate-300";
 
             const imgWrap = document.createElement("div");
             imgWrap.className = "aspect-square overflow-hidden bg-slate-50";
 
             const img = document.createElement("img");
-            img.src = auction.thumbnailUrl || "/images/placeholder.png";
-            img.alt = safeText(auction.title);
+            img.src = auction?.thumbnailUrl || "/images/placeholder.png";
+            img.alt = safeText(auction?.title);
             img.className = "h-full w-full object-cover transition-transform group-hover:scale-105";
 
             imgWrap.appendChild(img);
@@ -1195,11 +1065,11 @@ export class Ui {
 
             const title = document.createElement("h3");
             title.className = "truncate text-xs font-extrabold text-slate-900";
-            title.textContent = safeText(auction.title);
+            title.textContent = safeText(auction?.title);
 
             const price = document.createElement("p");
             price.className = "mt-1.5 text-sm font-extrabold text-slate-900";
-            price.textContent = `${formatNumber(auction.currentPrice)}원`;
+            price.textContent = `${formatNumber(auction?.currentPrice)}원`;
 
             info.appendChild(title);
             info.appendChild(price);

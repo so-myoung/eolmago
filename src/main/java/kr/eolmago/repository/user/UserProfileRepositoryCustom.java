@@ -13,4 +13,6 @@ public interface UserProfileRepositoryCustom {
 
     // nickname 중복 여부 확인
     boolean existsByNickname(String nickname);
+
+    Optional<String> findNicknameByUserId(UUID userId);
 }

@@ -5,14 +5,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.eolmago.dto.api.auction.request.AuctionDraftRequest;
 import kr.eolmago.dto.api.auction.request.AuctionSearchRequest;
-import kr.eolmago.dto.api.auction.response.AuctionDetailResponse;
-import kr.eolmago.dto.api.auction.response.AuctionDraftDetailResponse;
-import kr.eolmago.dto.api.auction.response.AuctionDraftResponse;
-import kr.eolmago.dto.api.auction.response.AuctionListResponse;
+import kr.eolmago.dto.api.auction.response.*;
 import kr.eolmago.dto.api.common.PageResponse;
 import kr.eolmago.global.security.CustomUserDetails;
 import kr.eolmago.service.auction.AuctionSearchService;
 import kr.eolmago.service.auction.AuctionService;
+import kr.eolmago.service.auction.SellerCredibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +30,8 @@ public class AuctionApiController {
 
     private final AuctionService auctionService;
     private final AuctionSearchService auctionSearchService;
+
+    private final SellerCredibilityService sellerCredibilityService;
 
     @Operation(summary = "경매 임시저장 생성")
     @PostMapping("/drafts")
@@ -137,6 +137,15 @@ public class AuctionApiController {
             @PathVariable UUID auctionId
     ) {
         AuctionDetailResponse response = auctionService.getAuctionDetail(auctionId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "판매자 신용도 조회")
+    @GetMapping("/{auctionId}/seller-credibility")
+    public ResponseEntity<SellerCredibilityResponse> getSellerCredibility(
+            @PathVariable UUID auctionId
+    ) {
+        SellerCredibilityResponse response = sellerCredibilityService.getSellerCredibility(auctionId);
         return ResponseEntity.ok(response);
     }
 }

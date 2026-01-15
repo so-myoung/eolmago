@@ -17,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static kr.eolmago.domain.entity.auction.QAuction.auction;
 import static kr.eolmago.domain.entity.auction.QAuctionImage.auctionImage;
@@ -27,9 +28,6 @@ import static kr.eolmago.domain.entity.user.QSocialLogin.socialLogin;
 import static kr.eolmago.domain.entity.user.QUser.user;
 import static kr.eolmago.domain.entity.user.QUserProfile.userProfile;
 
-/**
- * Deal Custom Repository 구현체
- */
 @Repository
 @RequiredArgsConstructor
 public class DealRepositoryImpl implements DealRepositoryCustom {
@@ -165,5 +163,19 @@ public class DealRepositoryImpl implements DealRepositoryCustom {
                                 .notExists()
                 )
                 .fetch();
+    }
+
+    @Override
+    public long countBySellerIdAndStatus(UUID sellerId, DealStatus status) {
+        Long cnt = queryFactory
+                .select(deal.dealId.count())
+                .from(deal)
+                .where(
+                        deal.seller.userId.eq(sellerId),
+                        deal.status.eq(status)
+                )
+                .fetchOne();
+
+        return cnt != null ? cnt : 0L;
     }
 }

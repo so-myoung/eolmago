@@ -1,7 +1,11 @@
 package kr.eolmago.repository.report.impl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import kr.eolmago.domain.entity.report.Report;
+import kr.eolmago.domain.entity.report.enums.ReportAction;
+import kr.eolmago.domain.entity.report.enums.ReportStatus;
+import kr.eolmago.domain.entity.report.enums.ReportTargetType;
 import kr.eolmago.domain.entity.user.QUser;
 import kr.eolmago.domain.entity.user.QUserProfile;
 import kr.eolmago.domain.entity.user.User;
@@ -13,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static kr.eolmago.domain.entity.report.QReport.report;
 
@@ -41,8 +46,9 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                 .fetch();
 
         long total = queryFactory
-                .selectFrom(report)
-                .fetchCount();
+                .select(report.count())
+                .from(report)
+                .fetchOne();
 
         return new PageImpl<>(reports, pageable, total);
     }
@@ -67,10 +73,65 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                 .fetch();
 
         long total = queryFactory
-                .selectFrom(report)
+                .select(report.count())
+                .from(report)
                 .where(report.reporter.userId.eq(reporterUser.getUserId()))
-                .fetchCount();
+                .fetchOne();
 
         return new PageImpl<>(reports, pageable, total);
     }
+
+    @Override
+    public Page<Report> findReportsWithFilters(ReportStatus status, Pageable pageable) {
+        QUser reporter = new QUser("reporter");
+        QUserProfile reporterProfile = new QUserProfile("reporterProfile");
+        QUser reportedUser = new QUser("reportedUser");
+        QUserProfile reportedUserProfile = new QUserProfile("reportedUserProfile");
+
+        BooleanBuilder builder = new BooleanBuilder();
+        if (status != null) {
+            builder.and(report.status.eq(status));
+        }
+
+        List<Report> reports = queryFactory
+                .selectFrom(report)
+                .join(report.reporter, reporter).fetchJoin()
+                .leftJoin(reporter.userProfile, reporterProfile).fetchJoin()
+                .join(report.reportedUser, reportedUser).fetchJoin()
+                .leftJoin(reportedUser.userProfile, reportedUserProfile).fetchJoin()
+                .where(builder)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(report.createdAt.desc())
+                .fetch();
+
+        long total = queryFactory
+                .select(report.count())
+                .from(report)
+                .where(builder)
+                .fetchOne();
+
+        return new PageImpl<>(reports, pageable, total);
+    }
+
+    @Override
+    public long countByReportedUserId(UUID userId) {
+        Long cnt = queryFactory
+                .select(report.reportId.count())
+                .from(report)
+                .where(
+                        report.reportedUser.userId.eq(userId),
+                        report.type.eq(ReportTargetType.AUCTION),
+                        report.action.in(
+                                ReportAction.WARN,
+                                ReportAction.SUSPEND_1D,
+                                ReportAction.SUSPEND_7D,
+                                ReportAction.BAN
+                        )
+                )
+                .fetchOne();
+
+        return cnt != null ? cnt : 0L;
+    }
+
 }
