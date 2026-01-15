@@ -2,6 +2,7 @@ package kr.eolmago.service.deal;
 
 import kr.eolmago.domain.entity.auction.AuctionImage;
 import kr.eolmago.domain.entity.deal.Deal;
+import kr.eolmago.domain.entity.user.UserProfile;
 import kr.eolmago.dto.api.deal.response.BuyerDealDetailResponse;
 import kr.eolmago.dto.api.deal.response.BuyerDealListResponse;
 import kr.eolmago.dto.api.deal.response.DealDetailDto;
@@ -10,6 +11,7 @@ import kr.eolmago.global.exception.ErrorCode;
 import kr.eolmago.repository.auction.AuctionImageRepository;
 import kr.eolmago.repository.deal.DealRepository;
 import kr.eolmago.repository.review.ReviewRepository;
+import kr.eolmago.repository.user.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,9 @@ public class BuyerDealService {
 
     private final DealRepository dealRepository;
     private final AuctionImageRepository auctionImageRepository;
+    private final UserProfileRepository userProfileRepository;
     private final ReviewRepository reviewRepository;
+
 
     /**
      * 구매자의 모든 거래 조회
@@ -34,7 +38,7 @@ public class BuyerDealService {
     public BuyerDealListResponse getBuyerDeals(UUID buyerId) {
         List<Deal> deals = dealRepository.findByBuyer_UserId(buyerId);
 
-        // ✅ hasReview 배치 계산
+        // hasReview 배치 계산
         Set<Long> reviewedDealIds = new HashSet<>();
         if (!deals.isEmpty()) {
             List<Long> dealIds = deals.stream().map(Deal::getDealId).toList();
@@ -53,7 +57,7 @@ public class BuyerDealService {
     }
 
     /**
-     * 구매자의 특정 거래 상세 조회 (목록용)
+     * 구매자의 특정 거래 상세 조회
      */
     public BuyerDealListResponse.DealDto getDealListDetail(Long dealId, UUID buyerId) {
         Deal deal = dealRepository.findById(dealId)
@@ -97,7 +101,7 @@ public class BuyerDealService {
     }
 
     /**
-     * 구매자 수령 확인 → 거래 완료(COMPLETED) 처리
+     * 구매자 수령 확인
      */
     @Transactional
     public void receiveConfirm(Long dealId, UUID buyerId) {
@@ -113,11 +117,14 @@ public class BuyerDealService {
         }
 
         deal.complete();
+
+        UserProfile sellerProfile = userProfileRepository
+                .findByUser_UserId(deal.getSeller().getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        sellerProfile.incrementTradeCount();
     }
 
-    /**
-     * Deal 엔티티 → BuyerDealListResponse.DealDto 변환
-     */
     private BuyerDealListResponse.DealDto toDealDto(Deal deal, boolean hasReview) {
         String createdAt = deal.getCreatedAt() != null
                 ? deal.getCreatedAt().toString()
