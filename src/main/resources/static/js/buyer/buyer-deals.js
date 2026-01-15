@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    initBuyerDealActions();
     initBuyerDealTabs();
     loadBuyerDeals();
 });
@@ -161,7 +162,9 @@ function createBuyerDealCard(deal) {
               <button
                 type="button"
                 class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                onclick="window.location.href='${reviewBtnUrl}'">
+                data-action="buyer-review"
+                data-deal-id="${deal.dealId}"
+                data-has-review="${hasReview}">>
                 ${reviewBtnLabel}
               </button>
               ` : ''}
