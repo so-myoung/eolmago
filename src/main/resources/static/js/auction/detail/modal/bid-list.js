@@ -1,14 +1,3 @@
-/**
- * 경로:
- * src/main/resources/static/js/auction/detail/bid_list.js
- *
- * 역할:
- * - 경매 상세 페이지에서 "입찰기록 내역" 모달 오픈/닫기
- * - /api/auctions/{auctionId}/bids?page=&size= 호출
- * - 서버가 내려준 amount(마스킹: null) 규칙 그대로 렌더링
- * - bidder 표기는 개인정보 최소화를 위해 "N번 입찰자"로 통일(서버가 bidderLabel을 주면 그대로 사용)
- */
-
 (function initBidListModal() {
     const root = document.querySelector("#auction-detail-page");
     if (!root) return;

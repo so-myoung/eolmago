@@ -9,6 +9,7 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
 import kr.eolmago.domain.entity.auction.Auction;
+import kr.eolmago.domain.entity.auction.QAuction;
 import kr.eolmago.domain.entity.auction.enums.AuctionStatus;
 import kr.eolmago.domain.entity.auction.enums.ItemCategory;
 import kr.eolmago.dto.api.auction.request.AuctionSearchRequest;
@@ -172,6 +173,19 @@ public class AuctionRepositoryImpl implements AuctionRepositoryCustom {
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    @Override
+    public Optional<UUID> findSellerIdByAuctionId(UUID auctionId) {
+        QAuction auction = QAuction.auction;
+
+        UUID sellerId = queryFactory
+                .select(auction.seller.userId)
+                .from(auction)
+                .where(auction.auctionId.eq(auctionId))
+                .fetchOne();
+
+        return Optional.ofNullable(sellerId);
     }
 
     private OrderSpecifier<?>[] createOrderSpecifiers(String sortKey) {
