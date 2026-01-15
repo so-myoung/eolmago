@@ -82,12 +82,10 @@ public class BidService {
 
         UUID prevHighestBidderId = bidRepository.findTopBidderIdByAuction(auction).orElse(null);
 
-        // 입찰 생성
         User bidder = userRepository.getReferenceById(buyer_id);
         Bid bid = Bid.create(auction, bidder, amount, requestId);
         bidRepository.save(bid);
 
-        // 경매 최고가 갱신, 입찰 카운트 증가
         auction.updateBid(amount);
 
         OffsetDateTime now = OffsetDateTime.now();
