@@ -102,4 +102,24 @@ public class ReviewController {
 
         return ResponseEntity.ok(reviewQueryService.getReceivedReviews(userId, page, size));
     }
+
+    @Operation(summary = "[Buyer] 작성 리뷰 상세 조회")
+    @GetMapping("/api/buyer/reviews/{reviewId}")
+    public ResponseEntity<ReviewResponse> getBuyerReviewDetail(
+            @PathVariable Long reviewId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UUID buyerId = userDetails.getUserId();
+        return ResponseEntity.ok(reviewService.getReviewDetailForBuyer(reviewId, buyerId));
+    }
+
+    @Operation(summary = "[Seller] 받은 리뷰 상세 조회")
+    @GetMapping("/api/seller/reviews/{reviewId}")
+    public ResponseEntity<ReviewResponse> getSellerReviewDetail(
+            @PathVariable Long reviewId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UUID sellerId = userDetails.getUserId();
+        return ResponseEntity.ok(reviewService.getReviewDetailForSeller(reviewId, sellerId));
+    }
 }
