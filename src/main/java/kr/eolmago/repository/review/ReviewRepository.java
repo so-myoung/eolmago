@@ -39,7 +39,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     long countBySeller_UserId(UUID sellerId);
 
     /**
-     * ✅ 받은 리뷰 목록 (sellerId 기준) - record DTO로 직접 조회
+     * 받은 리뷰 목록 (sellerId 기준) - record DTO로 직접 조회
      */
     @Query(
             value = """
