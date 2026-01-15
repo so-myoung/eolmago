@@ -112,6 +112,9 @@ export class Ui {
         this.sellerTradeCount = root.querySelector("#seller-trade-count");
         this.sellerCard = root.querySelector("#seller-card");
 
+        // deal
+        this._dealCreationLock = false;
+
         // popular auctions
         this.popularAuctions = root.querySelector("#popular-auctions");
 
@@ -441,7 +444,11 @@ export class Ui {
         try {
             await api.closeAuction(d.auctionId);
 
-            const { data: fresh, serverNowMs } = await api.fetchDetailWithServerTime(d.auctionId);
+            const { data: fresh, serverNowMs } = await this.waitUntilAuctionClosed(d.auctionId, api, {
+                timeoutMs: 6000,
+                intervalMs: 200,
+                maxIntervalMs: 200
+            });
 
             if (fresh && (fresh.bidIncrement === null || fresh.bidIncrement === undefined)) {
                 fresh.bidIncrement = calcBidIncrement(Number(fresh.currentPrice ?? 0));
@@ -453,6 +460,8 @@ export class Ui {
             this.renderRightPanel(fresh);
             this.applyAuctionStateUi(fresh);
             this.applyHighestUi(fresh);
+
+            await this.createDealIfNeededAfterClose(fresh, api);
 
             if (String(fresh?.status ?? "") === "LIVE") {
                 this.prepareBidDefaults(fresh);
@@ -891,6 +900,107 @@ export class Ui {
                 }
             }
         });
+    }
+
+    async createDealIfNeededAfterClose(data, api) {
+        if (!this.isEndedSold(data)) return;
+        if (!api || typeof api.createDealFromAuctionPath !== "function") return;
+
+        const auctionId = data?.auctionId;
+        if (!auctionId) return;
+
+        const storageKey = `deal-created:${auctionId}`;
+        if (this._dealCreationLock) return;
+        if (sessionStorage.getItem(storageKey) === "1") return;
+
+
+        const sellerId =
+            data?.sellerId ??
+            data?.sellerUserId ??
+            data?.seller?.id ??
+            data?.seller?.userId ??
+            null;
+
+        const buyerId =
+            data?.highestBidderId ??
+            data?.winnerId ??
+            data?.buyerId ??
+            null;
+
+        const finalPriceRaw =
+            data?.finalPrice ??
+            data?.currentPrice ??
+            null;
+
+        const finalPrice = (finalPriceRaw === null || finalPriceRaw === undefined)
+            ? null
+            : Number(finalPriceRaw);
+
+        // 유효성 방어
+        if (!sellerId || !buyerId) return;
+        if (!Number.isFinite(finalPrice) || finalPrice < 0) return;
+
+        const request = {
+            auctionId: auctionId,
+            sellerId: sellerId,
+            buyerId: buyerId,
+            finalPrice: finalPrice
+        };
+
+        this._dealCreationLock = true;
+
+        try {
+            const maxAttempts = 3;
+            let lastError = null;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const { data: res } = await api.createDealFromAuctionPath(auctionId, request);
+                    sessionStorage.setItem(storageKey, "1");
+                    return;
+                } catch (e) {
+                    lastError = e;
+                    // 마지막 시도면 종료
+                    if (attempt === maxAttempts) break;
+
+                    // backoff: 400ms, 800ms
+                    const delay = 400 * Math.pow(2, attempt - 1);
+                    await new Promise((r) => setTimeout(r, delay));
+                }
+            }
+
+            console.warn("거래 생성 실패:", lastError);
+        } finally {
+            this._dealCreationLock = false;
+        }
+    }
+
+    async waitUntilAuctionClosed(auctionId, api, options = {}) {
+        const timeoutMs = Number(options.timeoutMs ?? 15000);
+        let intervalMs = Number(options.intervalMs ?? 250);
+        const maxIntervalMs = Number(options.maxIntervalMs ?? 2000);
+
+        const startedAt = Date.now();
+        let last = null;
+        let lastServerNowMs = null;
+
+        while (Date.now() - startedAt < timeoutMs) {
+            const { data, serverNowMs } = await api.fetchDetailWithServerTime(auctionId);
+            last = data;
+            lastServerNowMs = serverNowMs;
+
+            const status = String(data?.status ?? "");
+            if (status !== "LIVE") {
+                return { data, serverNowMs };
+            }
+
+            // backoff (250ms -> 400ms -> 650ms ... 최대 2초)
+            await new Promise((r) => setTimeout(r, intervalMs));
+            intervalMs = Math.min(maxIntervalMs, Math.floor(intervalMs * 1.6));
+        }
+
+        // timeout: 마지막으로 본 데이터 반환(거래 생성은 ENDED_SOLD일 때만 시도되므로 안전)
+        return { data: last, serverNowMs: lastServerNowMs ?? Date.now() };
     }
 
     async temporarilySetBidButtonText(text, durationMs) {
