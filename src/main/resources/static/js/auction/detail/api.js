@@ -204,4 +204,30 @@ export class Api {
         const data = await response.json();
         return { data, response };
     }
+
+    async createDealFromAuctionPath(auctionId, request) {
+        const url = `/api/deals/auctions/${encodeURIComponent(auctionId)}`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json"
+            },
+            credentials: "same-origin",
+            body: JSON.stringify(request)
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            if (response.status === 409) {
+                return { data, response };
+            }
+            const msg = data?.message || `거래 생성에 실패했습니다 (${response.status})`;
+            throw new Error(msg);
+        }
+
+        return { data, response };
+    }
 }
