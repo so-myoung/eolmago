@@ -257,12 +257,19 @@ function createDealCard(deal, role, detailBasePath) {
                 reviewBtn.disabled = true;
             }
         } else {
-            // BUYER: 구현 난이도 줄이려면 상세로 보내서 작성/보기 처리
+            // ✅ BUYER: 리뷰 있으면 보기, 없으면 작성 화면으로 분기
+            const hasReview = !!deal.hasReview;
+            const reviewCreateUrl = `/buyer/deals/${deal.dealId}/review`;
+            const reviewViewUrl = `/buyer/deals/${deal.dealId}/review/view`;
+
             reviewBtn.className =
                 "inline-flex items-center px-3 py-1.5 border rounded-md text-xs font-medium bg-white border-indigo-600 text-indigo-600 hover:bg-indigo-50";
-            reviewBtn.textContent = deal.hasReview ? "리뷰 보기" : "리뷰 작성";
-            reviewBtn.addEventListener("click", () => {
-                window.location.href = `/buyer/deals/${deal.dealId}`;
+            reviewBtn.textContent = hasReview ? "리뷰 보기" : "리뷰 작성";
+
+            reviewBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = hasReview ? reviewViewUrl : reviewCreateUrl;
             });
         }
 
