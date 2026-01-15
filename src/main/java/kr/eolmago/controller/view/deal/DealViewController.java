@@ -26,13 +26,17 @@ public class DealViewController {
     // buyer
     private final BuyerDealService buyerDealService;
 
-    // =========================
-    // Seller
-    // =========================
+
     @GetMapping("/seller/deals")
     public String sellerDeals(Model model) {
         sellerViewModelSupport.applyCommonModel(model);
-        return "pages/seller/seller-deals";
+        model.addAttribute("pageTitle", "판매 거래 관리");
+        model.addAttribute("pageSubtitle", "판매한 상품의 거래 진행 상황을 확인하세요.");
+        model.addAttribute("role", "SELLER");
+        model.addAttribute("dealListApi", "/api/seller/deals");
+        model.addAttribute("dealDetailBasePath", "/seller/deals");
+
+        return "pages/deal/deals";
     }
 
     @GetMapping("/seller/deals/{dealId}")
@@ -55,8 +59,17 @@ public class DealViewController {
     // Buyer
     // =========================
     @GetMapping("/buyer/deals")
-    public String buyerDeals() {
-        return "pages/buyer/buyer-deals";
+    public String buyerDeals(Model model) {
+
+        sellerViewModelSupport.applyCommonModel(model);
+
+        model.addAttribute("pageTitle", "구매 거래 관리");
+        model.addAttribute("pageSubtitle", "구매한 상품의 거래 진행 상황을 확인하세요.");
+        model.addAttribute("role", "BUYER");
+        model.addAttribute("dealListApi", "/api/buyer/deals");
+        model.addAttribute("dealDetailBasePath", "/buyer/deals");
+
+        return "pages/deal/deals";
     }
 
     @GetMapping("/buyer/deals/{dealId}")
