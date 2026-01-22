@@ -144,7 +144,7 @@ kr.eolmago
 
 프로젝트 진행 중 발생한 이슈와 해결 과정은 아래 링크에서 확인할 수 있습니다.
 
-[트러블슈팅 문서 (Notion)](https://www.notion.so/2e33550b7b55805696cafeb37025c500)
+[트러블슈팅 문서 (Notion)](https://www.notion.so/2f089178cb0a801dbab4ff503532978a)
 
 <br>
 
