@@ -1,11 +1,14 @@
-# 얼마고? [ 중고 물품 경매 플랫폼 ]
-프로젝트 소개
-리드미 추후 작성 예정
+# 얼마고 : 중고 물품 경매 플랫폼
+**얼마고**는 원하는 중고 상품을 편리한 자동 검색으로 빠르게 찾고, 실시간 경매로 합리적인 가격에 낙찰받을 수 있는 플랫폼입니다.<br>
+판매자 정보와 거래 이력을 확인할 수 있고, 신고·제재 기반 운영으로 더 안전한 거래 환경을 제공합니다.<br>
+경매와 거래 진행 상황을 알림으로 실시간 추적하고, 중요한 업데이트를 즉시 확인할 수 있습니다.<br>
+낙찰 후에는 1:1 채팅방에서 판매자와 바로 소통하고, 거래를 안전하게 마무리할 수 있습니다.
 
-<br>
+| | |
+| --- | --- |
+| <img src="https://lpjncdsaqnkfjnhadodz.supabase.co/storage/v1/object/public/eolmago/view/home.png" width="100%" alt="홈 화면" /> | <img src="https://lpjncdsaqnkfjnhadodz.supabase.co/storage/v1/object/public/eolmago/view/detail.png" width="100%" alt="경매 상세 화면" /> |
 
-# 개발 기간
-**2025.12 ~ 2026.01**
+<p align="center"><i>홈 / 경매 상세 화면</i></p>
 
 <br>
 
@@ -18,222 +21,143 @@
   />
 </a>
 
-<br>
-
-## 팀원
-| <img src="https://github.com/so-myoung.png" width="100" height="100"/> | <img src="https://github.com/jk-Nam.png" width="100" height="100"/> | <img src="https://github.com/jihun4452.png" width="100" height="100"/> | <img src="https://github.com/yerincho94.png" width="100" height="100"/> | <img src="https://github.com/c-wonjun.png" width="100" height="100"/>         |
-|-----------------------------------------------------------------------|-------------------------------------------|-----------------------------------------------|---|-----------------------------------------|
-| 김소명 | 남준구 | 박지훈 | 조예린 | 최원준 |
-| [so-myoung](https://github.com/so-myoung)| [jk-Nam](https://github.com/jk-Nam) | [jihun4452](https://github.com/jihun4452) | [yerincho94](https://github.com/yerincho94) | [c-wonjun](https://github.com/c-wonjun) |
+[배포 사이트 바로가기](https://aibe4-project2-team5-connect5.onrender.com/)
 
 <br>
 
 ## 기술 스택
 
 ### Backend
-- Spring Boot / Spring Data JPA / Spring Security
+- Java 17, Spring Boot 3.5.9
+- Spring Data JPA, QueryDSL
+- Spring Security (OAuth2)
 - PostgreSQL
 - Redis
+- WebSocket (STOMP)
 - Swagger UI
-
-### Infra
-- Docker
-- GitHub Actions
-- Supabase
-- Render
+- Prometheus, Grafana
 
 ### Frontend
 - Thymeleaf
 - Tailwind CSS
 
+### Infra
+- Docker
+- GitHub Actions
+- Render
+- Supabase
+
 <br>
 
 ## 주요 기능
-추후 정리 예정
 
-### 1. 경매 & 거래 관리
+### 가입 · 인증
+- Google / Kakao / Naver 소셜 로그인
+- SMS 전화번호 인증
+- JWT 기반 인증 및 Role 권한 관리 (Spring Security, OAuth2)
 
-- 중고 전자기기 경매 등록/수정/삭제
-- 실시간 입찰 및 낙찰 처리
-- 경매 이후 자동으로 거래 엔티티 생성
-- 거래 상태에 따른 상세한 **상태 전이 로직** 적용
-- 판매자/구매자 마이페이지에서 **나의 경매 / 나의 거래 목록** 확인
+### 경매
+- 경매 임시저장 · 수정 · 삭제 · 게시
+- 내 경매 대시보드: 상태별 현황 및 성과, 정렬 · 필터 · 검색 · 페이징
+- 실시간 입찰: 최고가 실시간 갱신, 마감 5분 전 자동 연장(30분 캡)
+- 경매 자동 마감: 스케줄링 기반 유찰/낙찰 처리, 낙찰 시 거래 자동 생성
+- 입찰 동시성 제어: Redisson 분산락 + Redis Streams 기반 처리
+- 권한별 입찰 내역 조회
+- 판매자 정보(신뢰도) 확인
+- 유사 경매 추천
 
-### 2. 리뷰 시스템
+### 검색 · 자동완성
+- 초성/일반 텍스트/오타 보정 검색
+- 인기 키워드 자동완성
+- Redis 기반 검색어 캐싱 및 인기 검색어 집계/정렬
+- 카테고리·브랜드·가격·상태 다차원 필터링
 
-- 거래 완료 시 상호 리뷰 작성
-- 별점 + 텍스트 리뷰
-- 받은 리뷰 / 작성한 리뷰 목록 분리 조회
-- 리뷰 정렬/필터링 (예: 최신순, 별점 높은순 등)
+### 거래 관리 · 확정서
+- 거래 생성 및 상태 관리, 판매/구매 내역 분리 조회
+- 판매자·구매자 상호 확정 후 거래 완료 처리
+- 거래 확정서 PDF 생성 및 다운로드
 
-### 3. 고급 검색 & 추천
+### 알림 · 채팅
+- 경매 · 입찰 · 낙찰 · 거래 · 신고 · 찜 실시간 알림 (SSE)
+- 시스템 알림 타임라인: 내역 누적 조회 · 일괄 읽음 처리
+- 거래 전용 1:1 실시간 채팅 (WebSocket · STOMP)
+- Redis Streams 기반 메시지 처리/저장 파이프라인
 
-> 이 프로젝트의 특징적인 기능 중 하나는 **한국어 환경에 최적화된 검색 시스템**입니다.
+### 신고 · 관리자
+- 경매 게시물 및 사용자 신고 접수/조회
+- 관리자 대시보드: 사용자 목록/상태 관리, 신고 검토·처리, 제재 관리
 
-- **실시간 자동완성**
-    - 검색어 입력 시 즉시 후보 키워드 제시
-    - 초성 검색 지원 (예: `ㅇㅇㅍ` → `아이폰`)
-    - 인기 기반 정렬 (검색량이 많은 키워드 우선)
-    - 최대 10개까지 자동완성 노출
+### 마이페이지
+- 프로필 조회/수정 및 프로필 이미지 변경
+- 찜한 경매 목록 조회
+- 거래 통계(거래 횟수, 평균 별점 등) 조회
 
-- **3단계 검색 전략 (Fallback Chain)**
-    1. **초성 검색**
-    2. **Full-Text Search (PostgreSQL + Redis)**
-    3. **Trigram Similarity 기반 오타 보정**  
-       (예: `아이혼` → `아이폰` 자동 매칭)
+### 리뷰
+- 거래 완료 후 리뷰 작성 · 수정 · 삭제
+- 작성한 리뷰 목록 조회
+- 받은 리뷰 목록 조회
 
-- 검색 결과가 없을 시 **추천 키워드** 노출
+<br>
 
-### 4. 인증 & 보안
+## ERD
 
-- JWT 기반 인증/인가
-- Spring Security 기반 권한 관리
-- 로그인 사용자에 따라 접근 가능한 페이지/기능 제어
+> ERD 이미지 추가 예정
 
-### 5. 기타 기능
+<!-- ![ERD](./docs/images/erd.png) -->
 
-- Swagger UI를 통한 API 문서 제공
-- Docker 기반 컨테이너 환경 구성
-- GitHub Actions를 활용한 CI/CD 파이프라인
+<br>
 
----
+## 소프트웨어 아키텍처
 
+> 아키텍처 다이어그램 추가 예정
 
-### 폴더 구조
+<!-- ![Architecture](./docs/images/architecture.png) -->
+
+<br>
+
+## 프로젝트 구조
+
 ```
 kr.eolmago
 ├── controller
-│   ├── api         # REST API 컨트롤러
-│   └── view        # 페이지 렌더링용 View 컨트롤러
+│   ├── api          # REST API 컨트롤러
+│   └── view         # 뷰 렌더링 컨트롤러
 ├── dto
 │   ├── api
 │   │   ├── request  # API 요청 DTO
 │   │   └── response # API 응답 DTO
-│   └── view        # View 렌더링용 DTO
+│   └── view         # 뷰 전용 DTO
 ├── domain
-│   └── entity      # JPA 엔티티
-├── repository      # JPA Repository 인터페이스
-├── service         # 비즈니스 로직
+│   └── entity       # JPA 엔티티
+├── repository       # Spring Data JPA Repository
+├── service          # 비즈니스 로직
 └── global
-    ├── config      # 공통 설정 (Security, JPA 등)
-    ├── exception   # 예외 처리
-    ├── handler     # 글로벌 핸들러
-    ├── common      # 공용 유틸/베이스 클래스
-    └── util        # 유틸리티
+    ├── config       # 설정 클래스
+    ├── exception    # 예외 처리
+    ├── handler      # 이벤트 핸들러
+    └── util         # 유틸리티
 ```
 
-### 로컬 실행 방법
-```
-# 1. 저장소 클론
-git clone https://github.com/prgrms-aibe-devcourse/AIBE4_Project2_Team5_Connect5.git
+<br>
 
-# 2. 디렉토리 이동
-cd AIBE4_Project2_Team5_Connect5
+## 트러블슈팅
 
-# 3. Docker 컨테이너 실행 (PostgreSQL, Redis 등)
-docker compose up -d
+프로젝트 진행 중 발생한 이슈와 해결 과정은 아래 링크에서 확인할 수 있습니다.
 
-# 4. 컨테이너 실행 확인
-docker ps
+[트러블슈팅 문서 (Notion)](https://www.notion.so/2e33550b7b55805696cafeb37025c500)
 
-# 5. 애플리케이션 실행
-./gradlew bootRun
+<br>
 
-```
+## 팀 협업 컨벤션
 
-### 팀 협업 방식
-## 커밋 컨벤션
+- [커밋 컨벤션](docs/COMMIT_CONVENTION.md)
+- 이슈/PR 컨벤션
+  - GitHub 템플릿 사용(.github/ISSUE_TEMPLATE, PULL_REQUEST_TEMPLATE.md)
 
-| 타입                 | 설명                |
-| ------------------ | ----------------- |
-| `feat`             | 새로운 기능 추가         |
-| `fix`              | 버그 수정             |
-| `docs`             | 문서 수정             |
-| `style`            | 코드 포맷팅, 세미콜론 누락 등 |
-| `refactor`         | 코드 리팩토링           |
-| `test`             | 테스트 코드 추가         |
-| `chore`            | 빌드/패키지 수정, 기타 잡일  |
-| `design`           | CSS 등 UI 디자인 변경   |
-| `comment`          | 주석 추가 및 변경        |
-| `rename`           | 파일/폴더명 수정 또는 이동   |
-| `remove`           | 파일 삭제             |
-| `!breaking change` | 큰 규모의 API 변경      |
-| `!hotfix`          | 급한 버그 수정          |
-| `assets`           | 에셋 파일 추가          |
+<br>
 
-```
-[YYMMDD] type : 커밋메시지
-
-### 작업 내용
-- 작업 내용 1
-- 작업 내용 2
-- 작업 내용 3
-```
-
-### 테스트 & 품질
-- 단위 테스트 / 통합 테스트를 통한 도메인 로직 검증
-- Swagger 기반 수동 테스트 및 문서화
-- GitHub Actions로 PR 단위 빌드/테스트 자동화 (구성 시)
-
-### 트러블슈팅 및 해결방안 정리
-
-1. 동시 입찰로 인한 중복 요청 & 데이터 경합 문제
-- 문제 상황
-    - 같은 아이템에 대해 여러 사용자가 동시에 입찰할 때
-    - 중복 요청이 들어오며 데이터 정합성 불일치 발생 가능 (동시성 문제)
-    - 트랜잭션 레벨에서 경쟁 조건 발생
-    -
-- 해결 전략
-    - clientRequestId 기반 멱등 처리
-      → 동일 요청 중복 실행 방지
-
-    - DB UNIQUE 제약으로 중복 차단
-
-    - SELECT FOR UPDATE 비관적 락 적용
-      → 동시 입찰 충돌 제어 + 순차 처리 보장
-
-    - REDIS STREAMS 사용
-      → 입찰 요청을 큐 기반으로 직렬 처리
-      → 과도한 동시 요청 방지 + 데이터 정합성 강화
-
-      핵심 목표: 중복 입찰 방지 + 정합성 확보 + 안전한 경쟁 처리
-
-2. LAZY 로딩으로 발생하는 N+1 문제
-- 문제 상황
-    - JPA 연관관계 Lazy 로딩에서 발생하는 N+1 쿼리 폭발 문제
-    - 특히 DTO 매핑 과정에서 연관 엔티티 조회가 다수 발생
-    -
-- 해결 전략
-    - QueryDSL DTO Projection 사용
-      → 필요한 필드만 조회
-
-    - fetch join 적용
-      → 한 번의 쿼리로 필요한 연관 데이터 로딩
-
-    - 불필요한 쿼리 제거 + 조회 성능 개선
-
-    - 핵심 목표: 쿼리 최적화 + 성능 개선 + 오버패칭 제거
-
-3. Self-invocation으로 인한 @Transactional 미적용 문제
-- 문제 상황
-    - 동일 클래스 내부 메소드 호출 시 AOP 프락시가 적용되지 않아
-      @Transactional이 동작하지 않는 현상
-    -
-- 해결 전략
-    - 트랜잭션 내부에서 이벤트 분리 (이벤트 발행)
-    - 커밋 이후 리스너가 실행되도록 설계 분리
-
-    - 핵심 목표: 트랜잭션 경계 명확화 + 이벤트 처리 안정화
-
-4. Thymeleaf 렌더링 오류로 인한 로그인 풀림 문제
-- 문제 상황
-    - 로그인 후 렌더링 시 인증 정보가 유지되지 않는 현상
-    - 인증 필터와 템플릿 사이 인증 상태 불일치
-
-- 해결 전략
-    - 템플릿 렌더링 정상화
-    - NavModelAdvice 적용
-    - JwtAuthenticationFilter 개선
-    - 페이지 이동 시 인증 정보 유지 안정화
-
-    - 핵심 목표: 사용자 경험 개선 + 인증 유지 일관성 확보
+## 팀원
+| <img src="https://github.com/so-myoung.png" width="100" height="100" /> | <img src="https://github.com/jk-Nam.png" width="100" height="100" /> | <img src="https://github.com/jihun4452.png" width="100" height="100" /> | <img src="https://github.com/yerincho94.png" width="100" height="100" /> | <img src="https://github.com/c-wonjun.png" width="100" height="100" /> |
+| :---: | :---: | :---: | :---: | :---: |
+| 김소명 | 남준구 | 박지훈 | 조예린 | 최원준 |
+| [so-myoung](https://github.com/so-myoung) | [jk-Nam](https://github.com/jk-Nam) | [jihun4452](https://github.com/jihun4452) | [yerincho94](https://github.com/yerincho94) | [c-wonjun](https://github.com/c-wonjun) |
