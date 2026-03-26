@@ -12,19 +12,6 @@
 
 <br>
 
-## 배포 링크
-<a href="https://aibe4-project2-team5-connect5.onrender.com/">
-  <img
-    src="https://lpjncdsaqnkfjnhadodz.supabase.co/storage/v1/object/public/eolmago/logo.png"
-    alt="얼마고"
-    width="220"
-  />
-</a>
-
-[배포 사이트 바로가기](https://aibe4-project2-team5-connect5.onrender.com/)
-
-<br>
-
 ## 기술 스택
 
 ### Backend
