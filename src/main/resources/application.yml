@@ -21,3 +21,37 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        auction.bid.duration: true
+        auction.close.duration: true
+        auction.close.delay: true
+
+auction:
+  runtime:
+    bid:
+      lock-timeout-ms: 0
+      transaction-timeout-sec: 3
+    close:
+      lock-timeout-ms: 200
+      transaction-timeout-sec: 5
+    scheduler:
+      pool-size: 10
+      thread-name-prefix: auction-close-
+      await-termination-sec: 30
+      sweep-delay-ms: 60000
+      sweep-batch-size: 100

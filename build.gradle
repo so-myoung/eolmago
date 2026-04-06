@@ -52,6 +52,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // JSON/JSONB 등 추가 타입 매핑 유틸
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.14.1'
@@ -64,9 +66,15 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Testcontainers for PostgreSQL integration tests
+    testImplementation 'org.testcontainers:testcontainers:1.19.8'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.8'
+    testImplementation 'org.testcontainers:postgresql:1.19.8'
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
@@ -75,6 +83,9 @@ dependencies {
 
     // SOLAPI
     implementation 'net.nurigo:sdk:4.3.0'
+
+    // Env
+    implementation 'me.paulschwarz:springboot3-dotenv:5.1.0'
 }
 
 // Querydsl 빌드 옵션 설정
