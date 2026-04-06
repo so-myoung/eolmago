@@ -65,6 +65,12 @@ jwt:
   access-token-expiry: ${JWT_ACCESS_EXPIRY:90000}
   refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}
 
+supabase:
+  url: ${SUPABASE_URL}
+  anon-key: ${SUPABASE_ANON_KEY}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  bucket: eolmago
+
 coolsms:
   apiKey: ${COOLSMS_API_KEY:}
   secretkey: ${COOLSMS_SECRET_KEY:}
