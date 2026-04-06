@@ -39,11 +39,11 @@ out/
 ### Claude Code ###
 .claude/
 
-# Ignore dev profile only (keep prod tracked)
-src/main/resources/application-dev.yml
-
 # QueryDSL이 생성하는 Q클래스 경로
 src/main/generated/
 
 # Windows 예약어 파일 (자동 생성 방지)
 nul
+
+# 환경변수 파일
+.env
