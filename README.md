@@ -18,21 +18,21 @@
 - Java 17, Spring Boot 3.5.9
 - Spring Data JPA, QueryDSL
 - Spring Security (OAuth2)
-- PostgreSQL
+- PostgreSQL 17
 - Redis
 - WebSocket (STOMP)
 - Swagger UI
-- Prometheus, Grafana
+- JUnit 5
+- Prometheus, Grafana, Loki, Alloy, k6
 
 ### Frontend
 - Thymeleaf
 - Tailwind CSS
 
 ### Infra
+- AWS EC2, RDS, ElastiCache
 - Docker
-- GitHub Actions
-- Render
-- Supabase
+- Supabase Storage
 
 <br>
 
@@ -47,7 +47,11 @@
 - 경매 임시저장 · 수정 · 삭제 · 게시 · 취소
 - 내 경매 대시보드: 상태별 현황 및 성과
 - 실시간 입찰: 최고가 실시간 갱신, 마감 5분 전 자동 연장(30분 캡)
-- 입찰 동시성 제어: Redisson 분산락 + Redis Streams 기반 처리
+- 입찰 동시성 제어: DB 비관적 락(SELECT ... FOR UPDATE), lock_timeout, clientRequestId 멱등성 기반 중복 방지
+- 동일 경매 동시 입찰 시 짧은 임계구역만 보호하고, 후행 요청은 장시간 대기하지 않도록 빠른 실패 처리
+- 입찰 동시성 검증: JUnit 5 기반 통합 테스트로 최고가·입찰 수·중복/누락 여부 검증
+- 입찰 부하 테스트: k6 기반 단일 경매 집중 / 다중 경매 분산 시나리오 검증
+- 관측 및 분석: Prometheus · Grafana · Loki · Alloy 기반으로 lock wait/hold time, 응답 시간, 에러율, 실패 유형 시각화
 - 경매 자동 마감: 스케줄링 기반 유찰/낙찰 처리, 낙찰 시 거래 자동 생성
 - 유찰 시 재등록 기능 제공
 - 권한별 입찰 내역 조회
@@ -69,6 +73,7 @@
 - 시스템 알림 타임라인: 내역 누적 조회 · 일괄 읽음 처리
 - 거래 전용 1:1 실시간 채팅 (WebSocket · STOMP)
 - Redis Streams 기반 메시지 처리/저장 파이프라인
+- afterCommit 기반 후처리 분리로 알림 실패가 경매/입찰 트랜잭션에 영향을 주지 않도록 설계
 
 ### 신고 · 관리자
 - 경매 게시물 및 사용자 신고 접수/조회
@@ -97,9 +102,8 @@
 
 ## 소프트웨어 아키텍처
 
-> 아키텍처 다이어그램 추가 예정
+<img width="3021" height="1279" alt="image" src="https://github.com/user-attachments/assets/9503b995-18c3-43e1-a03c-ab1f2587983e" />
 
-<!-- ![Architecture](./docs/images/architecture.png) -->
 
 <br>
 
