@@ -102,8 +102,7 @@
 
 ## 소프트웨어 아키텍처
 
-<img width="3021" height="1279" alt="image" src="https://github.com/user-attachments/assets/9503b995-18c3-43e1-a03c-ab1f2587983e" />
-
+<img width="3021" height="1049" alt="eolmago 인프라" src="https://github.com/user-attachments/assets/62bb322a-7861-414f-a006-3a1f4eac785f" />
 
 <br>
 
